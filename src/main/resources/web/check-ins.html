@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <title>Check-ins — RelayBook</title>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-topbar">
+      <a class="site-brand" href="/" aria-label="RelayBook home"><span class="brand-mark">R</span><span>RelayBook<small>DIGITAL ADDRESS BOOK</small></span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/">Contacts</a><a class="active" href="/check-ins">Check-ins</a>
+      </nav>
+      <div class="site-actions">
+        <span class="local-note">Local demo</span>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark colors"><span class="theme-switch" aria-hidden="true"><span></span></span><span id="theme-label">Dark mode</span></button>
+      </div>
+    </header>
+
+    <section class="page-banner">
+      <img class="header-motion" src="/header-atmosphere.gif" alt="" aria-hidden="true">
+      <div class="banner-wash" aria-hidden="true"></div>
+      <div class="banner-content">
+        <div class="page-kicker">CONTACTS</div>
+        <h1>Check-ins</h1>
+      </div>
+    </section>
+
+    <main>
+      <div class="stat-row"><span><strong id="stale-count">—</strong> need checking</span><span><strong id="single-count">—</strong> have one route</span></div>
+      <div class="content-grid">
+        <section class="surface">
+          <h2>Needs checking</h2>
+          <div class="contact-list" id="stale-list" aria-live="polite"><div class="empty-message">Loading…</div></div>
+        </section>
+        <section class="surface">
+          <h2>One route saved</h2>
+          <div class="contact-list" id="single-list" aria-live="polite"><div class="empty-message">Loading…</div></div>
+        </section>
+      </div>
+      <p class="site-footer">RelayBook · Local demo</p>
+    </main>
+  </div>
+  <script src="/site.js" defer></script>
+  <script>
+    function localDate() {
+      const date = new Date();
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    function rowFor(contact, note, needsCheck) {
+      const row = document.createElement('div');
+      row.className = 'checkin-row';
+      const main = document.createElement('div');
+      const link = document.createElement('a');
+      link.href = '/person/' + encodeURIComponent(contact.id);
+      link.textContent = contact.fullName;
+      const meta = document.createElement('div');
+      meta.className = 'checkin-meta';
+      meta.textContent = [contact.typeLabel, contact.relationship, contact.suggestedChannel].filter(Boolean).join(' · ');
+      main.append(link, meta);
+
+      const side = document.createElement('div');
+      side.className = 'checkin-side';
+      const reason = document.createElement('div');
+      reason.className = 'checkin-reason';
+      reason.textContent = note;
+      const actions = document.createElement('div');
+      actions.className = 'checkin-actions';
+      if (needsCheck) {
+        const button = document.createElement('button');
+        button.className = 'action-button';
+        button.type = 'button';
+        button.textContent = 'Mark checked today';
+        button.addEventListener('click', () => markChecked(contact, button));
+        actions.appendChild(button);
+      } else {
+        const edit = document.createElement('a');
+        edit.className = 'action-button';
+        edit.href = '/?edit=' + encodeURIComponent(contact.id);
+        edit.textContent = 'Add route';
+        actions.appendChild(edit);
+      }
+      const open = document.createElement('a');
+      open.className = 'action-button';
+      open.href = '/person/' + encodeURIComponent(contact.id);
+      open.textContent = 'Open';
+      actions.appendChild(open);
+      side.append(reason, actions);
+      row.append(main, side);
+      return row;
+    }
+
+    async function markChecked(contact, button) {
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      try {
+        // Quick action endpoint: marks every route checked today without resending the record.
+        const response = await fetch('/api/contacts/' + encodeURIComponent(contact.id) + '/verify', { method: 'POST' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'Could not update contact.');
+        await loadCheckins();
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = 'Mark checked today';
+        alert(error.message);
+      }
+    }
+
+    async function loadCheckins() {
+      const staleList = document.getElementById('stale-list');
+      const singleList = document.getElementById('single-list');
+      try {
+        const response = await fetch('/api/contacts');
+        const contacts = await response.json();
+        if (!response.ok) throw new Error('Unable to load contacts.');
+        const stale = contacts.filter(contact => contact.status === 'Needs verification');
+        const single = contacts.filter(contact => contact.status === 'Single route');
+        document.getElementById('stale-count').textContent = stale.length;
+        document.getElementById('single-count').textContent = single.length;
+        staleList.replaceChildren();
+        singleList.replaceChildren();
+        if (!stale.length) staleList.innerHTML = '<div class="empty-message">No contacts need checking.</div>';
+        else stale.forEach(contact => {
+          const note = contact.daysSinceVerified < 0 ? 'No date saved' : 'Last checked ' + contact.daysSinceVerified + ' days ago';
+          staleList.appendChild(rowFor(contact, note, true));
+        });
+        if (!single.length) singleList.innerHTML = '<div class="empty-message">No single-route contacts.</div>';
+        else single.forEach(contact => singleList.appendChild(rowFor(contact, 'One route', false)));
+      } catch (error) {
+        staleList.innerHTML = '<div class="empty-message">Could not load contacts.</div>';
+        singleList.replaceChildren();
+      }
+    }
+    loadCheckins();
+  </script>
+</body>
+</html>

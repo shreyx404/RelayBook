@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <title>RelayBook — Digital Address Book</title>
+  <style>
+    /* A quieter, paper-like interface: practical directory first, decoration second. */
+    * { box-sizing: border-box; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    body { margin: 0; }
+    .shell { margin: 0 auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; }
+    .brand-mark { display: grid; place-items: center; }
+    .brand small { display: block; margin-top: 2px; }
+    .top-right { display: flex; align-items: center; gap: 10px; }
+    .dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; }
+    .hero { display: grid; align-items: end; }
+    .hero-note { justify-self: end; }
+    .layout { display: grid; align-items: start; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .search { width: 100%; outline: none; }
+    .card-top { display: flex; justify-content: space-between; gap: 12px; }
+    .identity { min-width: 0; }
+    .route { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .route-value { text-align: right; overflow-wrap: anywhere; }
+    .status-row, .card-actions, .form-actions { display: flex; align-items: center; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field input, .field select, .field textarea { min-width: 0; outline: none; }
+    .privacy { display: flex; align-items: flex-start; gap: 9px; }
+    .primary { flex: 1; border: 0; }
+    .secondary { border: 1px solid var(--line); }
+    .empty { text-align: center; line-height: 1.6; }
+    :root {
+      --bg: #f4f1e9;
+      --panel: #fffdf8;
+      --panel-2: #ebe8df;
+      --line: #d8d4c9;
+      --text: #29372e;
+      --muted: #70796f;
+      --lime: #315d47;
+      --lime-dark: #e3ebe3;
+      --orange: #9b5c33;
+      --red: #985047;
+      --blue: #4c6475;
+      --radius: 5px;
+      --font-ui: "Avenir Next", "Gill Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+      --font-reading: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      font-family: var(--font-ui);
+    }
+    body {
+      color: var(--text);
+      background-color: var(--bg);
+      background-image: linear-gradient(rgba(244, 241, 233, .86), rgba(244, 241, 233, .86)), url('/paper-texture.jpg');
+      background-size: cover;
+      background-position: center top;
+      background-attachment: fixed;
+    }
+    .shell { max-width: 1230px; padding: 0 38px 34px; }
+    .topbar { height: 68px; border-bottom: 1px solid var(--line); }
+    .brand { gap: 10px; font-family: Georgia, "Times New Roman", serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+    .brand-mark { width: 29px; height: 29px; border-radius: 4px; background: var(--lime); color: #fffdf8; font-family: Georgia, serif; font-size: 17px; font-weight: 700; transform: none; }
+    .brand small { color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; letter-spacing: .08em; font-weight: 600; }
+    .local-pill { border: 0; border-radius: 0; padding: 0; color: var(--muted); font-size: 11px; letter-spacing: .01em; }
+    .dot { background: #69816a; box-shadow: none; }
+    .hero { grid-template-columns: minmax(0, 1.3fr) minmax(220px, .7fr); gap: 34px; padding: 32px 0 23px; }
+    .eyebrow { color: var(--lime); font-size: 10px; font-weight: 650; letter-spacing: .1em; }
+    h1 { max-width: 700px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 4.2vw, 49px); line-height: 1.08; letter-spacing: -.035em; margin: 10px 0 11px; font-weight: 400; }
+    h1 em { color: var(--lime); font-style: italic; }
+    .hero-copy { max-width: 620px; color: #657066; font-size: 13px; line-height: 1.65; }
+    .hero-note { max-width: 310px; border-left: 2px solid #aab5a5; padding: 4px 0 4px 15px; color: #657066; font-size: 12px; line-height: 1.65; }
+    .hero-note strong { display: block; margin-bottom: 4px; color: var(--text); font-family: Georgia, "Times New Roman", serif; font-size: 15px; font-weight: 600; }
+    .metrics { display: flex; gap: 0; padding: 10px 0; margin: 0 0 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .metric { flex: 0 0 auto; min-height: 0; padding: 1px 23px 1px 0; margin-right: 23px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: transparent; overflow: visible; }
+    .metric:last-child { border-right: 0; }
+    .metric:after { display: none; }
+    .metric .num { font-size: 19px; letter-spacing: 0; font-weight: 650; color: var(--text); }
+    .metric .label { margin-top: 1px; color: var(--muted); font-size: 10px; }
+    .layout { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 42px; }
+    .panel { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+    .panel-head { padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+    .panel-title { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
+    .panel-sub { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .count { color: var(--muted); font-size: 11px; }
+    .search-wrap { padding: 12px 0 8px; }
+    .search { border: 1px solid #d5d1c6; border-radius: 5px 4px 6px 4px; background: #fffdf8; color: var(--text); padding: 10px 12px; font-size: 12px; }
+    .search:focus, .field input:focus, .field select:focus, .field textarea:focus { border-color: #76917b; box-shadow: 0 0 0 2px #315d4712; }
+    .cards { display: block; padding: 0; }
+    .contact-card { position: relative; border: 0; border-radius: 0; background: transparent; padding: 15px 8px 14px; transition: background .15s; }
+    .contact-card::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 0; height: 1px; background: var(--line); transform: rotate(-.08deg); transform-origin: left center; }
+    .contact-card:hover { background: #eeece4; transform: none; }
+    .card-top { align-items: center; }
+    .identity-group { display: flex; min-width: 0; align-items: center; gap: 11px; }
+    .avatar { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #e2e8df; color: #49634d; font-family: Georgia, "Times New Roman", serif; font-size: 13px; }
+    .name { color: var(--text); font-size: 14px; font-weight: 650; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .score { min-width: 52px; color: var(--muted); text-align: right; }
+    .score b { display: inline; color: var(--lime); font-size: 12px; font-weight: 650; letter-spacing: 0; }
+    .score span { color: var(--muted); font-size: 10px; }
+    .route { margin-top: 10px; border-top: 0; padding-top: 0; }
+    .route-label { color: var(--muted); font-size: 10px; }
+    .route-value { color: #35463a; font-size: 11px; font-weight: 600; }
+    .time-hint { margin: 6px 0 0 45px; color: var(--muted); font-size: 10px; }
+    .time-hint b { color: #59685a; font-weight: 600; }
+    .status-row { justify-content: flex-start; gap: 7px; margin: 7px 0 0 45px; }
+    .status { position: relative; border-radius: 0; padding: 0; background: none !important; font-size: 10px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+    .status:before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; border-radius: 50%; background: currentColor; }
+    .status.ready { color: #476b4f; }
+    .status.warn { color: #9b5c33; }
+    .status.neutral { color: #70796f; }
+    .verified { color: #81877e; font-size: 10px; }
+    .rationale { margin: 6px 0 0 45px; color: #697268; font-size: 10px; line-height: 1.5; }
+    .card-actions { justify-content: flex-start; gap: 12px; margin: 7px 0 0 45px; }
+    .mini-btn, .button { border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: #41634b; padding: 3px 0; font-size: 10px; font-weight: 550; }
+    .mini-btn:hover, .button:hover { border-color: #41634b; }
+    .mini-btn.danger { color: #85554b; }
+    .mini-btn.danger:hover { border-color: #85554b; color: #85554b; }
+    .form-panel { position: static; padding: 18px 20px 20px; border-left: 2px solid #d3cfc3; border-radius: 5px 7px 4px 6px; background: rgba(235, 232, 223, .91); box-shadow: 0 2px 6px rgba(55, 50, 38, .05); }
+    .form-panel .panel-head { padding-bottom: 11px; border-color: #d3cfc3; }
+    .form-body { padding: 13px 0 0; }
+    .form-grid { gap: 11px 10px; }
+    .field { gap: 5px; }
+    .field label { color: #556258; font-size: 10px; font-weight: 600; }
+    .field input, .field select, .field textarea { border: 1px solid #d1cec3; border-radius: 5px 4px 6px 4px; background: #fffdf8; color: var(--text); padding: 9px 10px; font-size: 11px; }
+    .field input::placeholder, .field textarea::placeholder { color: #9a9d92; }
+    .field select option { background: #fffdf8; }
+    .route-row { display: grid; grid-template-columns: 108px 1fr 122px 1fr 26px; gap: 6px; margin-bottom: 6px; }
+    .route-row input, .route-row select { border: 1px solid #d1cec3; border-radius: 4px; background: #fffdf8; color: var(--text); padding: 8px 8px; font-size: 11px; min-width: 0; }
+    .route-row .r-remove { border: 1px solid #d8d4c9; border-radius: 4px; background: transparent; color: #85554b; font-size: 13px; line-height: 1; }
+    .route-row .r-remove:hover { border-color: #85554b; }
+    .mini-link { border: 0; background: none; color: #41634b; font-size: 10px; font-weight: 600; padding: 2px 0; border-bottom: 1px solid transparent; }
+    .mini-link:hover { border-color: #41634b; }
+    .route-list { margin: 6px 0 0 45px; padding: 0; border: 0; background: none; color: #697268; font: 10px/1.6 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .privacy { margin-top: 12px; padding: 11px 0; border: 0; border-top: 1px solid #d3cfc3; border-radius: 0; color: #687268; font-size: 10px; }
+    .privacy input { accent-color: var(--lime); }
+    .primary { border-radius: 5px 4px 6px 4px; background: var(--lime); color: white; padding: 10px 14px; font-size: 11px; font-weight: 650; }
+    .primary:hover { background: #274c39; }
+    .secondary { border-color: #c8c4b9; border-radius: 4px; background: transparent; color: #526052; font-size: 10px; }
+    .form-message { color: #8b5b37; font-size: 10px; }
+    .empty { border: 1px dashed #c9c5ba; border-radius: 4px; color: var(--muted); padding: 28px 15px; font-size: 12px; }
+    .footnote { max-width: 970px; padding: 17px 0 0; color: #767d73; font-size: 10px; line-height: 1.65; }
+    .footnote strong { color: #566456; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; gap: 28px; }
+      .form-panel { position: static; }
+      .hero { gap: 24px; }
+    }
+    @media (max-width: 620px) {
+      .shell { padding: 0 16px 24px; }
+      .topbar { height: 62px; }
+      .local-pill { display: none; }
+      .hero { display: block; padding: 26px 0 20px; }
+      .hero-note { margin-top: 18px; }
+      .metrics { justify-content: space-between; }
+      .metric { margin-right: 10px; padding-right: 10px; }
+      .metric .num { font-size: 17px; }
+      .metric .label { font-size: 9px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+    }
+    .theme-toggle { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); padding: 6px 9px; font-size: 10px; }
+    .theme-toggle:hover { background: var(--panel-2); color: var(--text); }
+    .theme-switch { position: relative; display: inline-block; width: 29px; height: 16px; border-radius: 999px; background: #d7ddcf; transition: background .18s ease; }
+    .theme-switch span { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fffdf8; box-shadow: 0 1px 2px #18231830; transition: transform .18s ease; }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #232a24;
+      --panel: #2a322b;
+      --panel-2: #2d362f;
+      --line: #465047;
+      --text: #ecebe2;
+      --muted: #aab3a8;
+      --lime: #9db89a;
+      --lime-dark: #334237;
+      --orange: #e0ad7e;
+      --red: #d4958a;
+      --blue: #a9bcc8;
+    }
+    :root[data-theme="dark"] .theme-switch { background: #58745d; }
+    :root[data-theme="dark"] .theme-switch span { transform: translateX(13px); }
+    :root[data-theme="dark"] .hero-copy,
+    :root[data-theme="dark"] .hero-note { color: #c0c8bd; }
+    :root[data-theme="dark"] .hero-note { border-left-color: #617360; }
+    :root[data-theme="dark"] .avatar { background: #39483a; color: #d7e4d1; }
+    :root[data-theme="dark"] .route-value { color: #e0e6da; }
+    :root[data-theme="dark"] .time-hint b { color: #d0d8cb; }
+    :root[data-theme="dark"] .status.ready { color: #a6c79f; }
+    :root[data-theme="dark"] .status.warn { color: #e0ad7e; }
+    :root[data-theme="dark"] .status.neutral { color: #aab3a8; }
+    :root[data-theme="dark"] .verified,
+    :root[data-theme="dark"] .rationale { color: #aeb8ac; }
+    :root[data-theme="dark"] .contact-card:hover { background: #2b342d; }
+    :root[data-theme="dark"] .form-panel { border-left-color: #465047; }
+    :root[data-theme="dark"] .form-panel .panel-head { border-color: #465047; }
+    :root[data-theme="dark"] .field label { color: #c5cec2; }
+    :root[data-theme="dark"] .search,
+    :root[data-theme="dark"] .field input,
+    :root[data-theme="dark"] .field select,
+    :root[data-theme="dark"] .field textarea { border-color: #4a554b; background: #232a24; color: #ecebe2; }
+    :root[data-theme="dark"] .field select option { background: #232a24; }
+    :root[data-theme="dark"] .route-row input,
+    :root[data-theme="dark"] .route-row select { border-color: #4a554b; background: #232a24; color: #ecebe2; }
+    :root[data-theme="dark"] .route-row .r-remove { border-color: #5c5347; color: #d8a08c; }
+    :root[data-theme="dark"] .route-list { color: #9aa398; }
+    :root[data-theme="dark"] .field input::placeholder,
+    :root[data-theme="dark"] .field textarea::placeholder { color: #899488; }
+    :root[data-theme="dark"] .privacy { border-color: #465047; color: #b2bcb0; }
+    :root[data-theme="dark"] .primary { background: #58775d; color: #fffdf8; }
+    :root[data-theme="dark"] .primary:hover { background: #66866b; }
+    :root[data-theme="dark"] .secondary { border-color: #566156; color: #d1d9ce; }
+    :root[data-theme="dark"] .form-message { color: #e0ad7e; }
+    :root[data-theme="dark"] .empty { border-color: #566156; }
+    :root[data-theme="dark"] .footnote { color: #a0aa9f; }
+    :root[data-theme="dark"] .footnote strong { color: #d0d8cb; }
+    :root[data-theme="dark"] body {
+      background-color: var(--bg);
+      background-image: linear-gradient(rgba(35, 42, 36, .92), rgba(35, 42, 36, .92)), url('/paper-texture.jpg');
+    }
+    :root[data-theme="dark"] .form-panel { background: rgba(45, 54, 47, .94); box-shadow: 0 2px 6px rgba(0, 0, 0, .16); }
+    :root[data-theme="dark"] .contact-card::after { background: #465047; }
+
+    /* A humanist sans for everyday reading, with a softer book serif for names and headings. */
+    .brand, .brand small, .hero-copy, .hero-note, .panel-sub, .count, .search,
+    .metric .label, .meta, .score, .route-label, .route-value, .time-hint,
+    .status-row, .rationale, .card-actions, .field, .privacy, .form-message,
+    .footnote, .theme-toggle { font-family: var(--font-ui); }
+    .brand, h1, .hero-note strong, .panel-title, .avatar, .name { font-family: var(--font-reading); }
+    h1 { letter-spacing: -.025em; }
+    .brand { font-size: 21px; font-weight: 600; }
+    .brand small { font-size: 9px; }
+    .hero-copy { font-size: 14px; }
+    .hero-note { font-size: 13px; }
+    .panel-sub, .meta { font-size: 11px; }
+    .route-label, .field label { font-size: 11px; }
+    .route-value { font-size: 12px; }
+    .name { font-size: 15px; font-weight: 500; }
+    .rationale { font-size: 11px; }
+    .field input, .field select, .field textarea { font-family: var(--font-ui); font-size: 12px; }
+    .footnote { font-size: 11px; }
+    .brand { color: var(--text); text-decoration: none; }
+    .site-nav { display: flex; align-items: center; gap: 16px; }
+    .site-nav a { color: var(--muted); font: 11px var(--font-ui); text-decoration: none; padding: 5px 0; border-bottom: 1px solid transparent; }
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 15px; }
+    .hero-actions .button { display: inline-flex; align-items: center; min-height: 34px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 5px 4px 6px 4px; text-decoration: none; }
+    .hero-actions .hero-action-primary { border-color: var(--lime); background: var(--lime); color: #fffdf8; }
+    :root[data-theme="dark"] .hero-actions .hero-action-primary { color: #1f2922; }
+    .site-nav a:hover, .site-nav a.active { color: var(--lime); border-bottom-color: var(--lime); }
+    .hero { position: relative; isolation: isolate; overflow: hidden; border-radius: 6px 8px 5px 7px; }
+    .header-motion { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; opacity: .42; pointer-events: none; }
+    .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(100deg, rgba(244,241,233,.87), rgba(244,241,233,.70) 58%, rgba(244,241,233,.56)); pointer-events: none; }
+    .hero-copy-block, .hero-note { position: relative; z-index: 2; }
+    :root[data-theme="dark"] .hero::before { background: linear-gradient(100deg, rgba(35,42,36,.92), rgba(35,42,36,.80) 58%, rgba(35,42,36,.68)); }
+    .person-link { color: inherit; text-decoration: none; border-bottom: 1px dashed transparent; }
+    .person-link:hover { border-bottom-color: currentColor; }
+    .card-actions a { display: inline-block; text-decoration: none; }
+    .export-message { margin: 4px 0 0 45px; color: var(--muted); font-size: 10px; }
+    .vcard-preview { margin: 6px 0 0 45px; padding: 8px 10px; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); color: var(--text); white-space: pre-wrap; font: 10px/1.45 ui-monospace, Consolas, monospace; }
+    @media (max-width: 620px) {
+      .topbar { height: auto; min-height: 62px; flex-wrap: wrap; padding: 8px 0; gap: 7px 12px; }
+      .site-nav { order: 3; width: 100%; padding-left: 39px; gap: 15px; }
+      .hero { padding: 26px 18px 20px; }
+      .hero-note { justify-self: start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .header-motion { display: none; }
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="RelayBook home"><span class="brand-mark">R</span><span>RelayBook<small>DIGITAL ADDRESS BOOK</small></span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="active" href="/">Contacts</a>
+        <a href="/check-ins">Check-ins</a>
+      </nav>
+      <div class="top-right">
+        <span class="local-pill"><i class="dot"></i>Local demo</span>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark colors">
+          <span class="theme-switch" aria-hidden="true"><span></span></span>
+          <span id="theme-label">Dark mode</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <img class="header-motion" src="/header-atmosphere.gif" alt="" aria-hidden="true">
+      <div class="hero-copy-block">
+        <div class="eyebrow">RELAYBOOK</div>
+        <h1>Digital Address Book</h1>
+        <div class="hero-actions">
+          <a class="button hero-action-primary" href="#editor">Add Contact</a>
+          <a class="button" href="/check-ins">Check-ins</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Address book summary">
+      <div class="metric"><div class="num" id="total-count">—</div><div class="label">people</div></div>
+      <div class="metric"><div class="num" id="needs-check">—</div><div class="label">to check</div></div>
+      <div class="metric"><div class="num" id="backup-count">—</div><div class="label">with a backup</div></div>
+      <div class="metric"><div class="num" id="emergency-count">—</div><div class="label">emergency missing routes</div></div>
+    </section>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2 class="panel-title">All Contacts</h2></div>
+          <span class="count" id="shown-count">Loading…</span>
+        </div>
+        <div class="search-wrap"><input class="search" id="search" type="search" placeholder="Search people or details…" aria-label="Search contacts"></div>
+        <div class="cards" id="contact-list" aria-live="polite"><div class="empty">Loading contacts…</div></div>
+      </section>
+
+      <aside class="panel form-panel" id="editor">
+        <div class="panel-head">
+          <div><h2 class="panel-title" id="form-title">Add Contact</h2></div>
+        </div>
+        <div class="form-body">
+          <form id="contact-form">
+            <div class="form-grid">
+              <div class="field"><label for="type">Kind</label><select id="type" name="type"><option value="PERSON">Person</option><option value="ORGANIZATION">Organization</option><option value="EMERGENCY">Emergency contact</option></select></div>
+              <div class="field"><label for="fullName">Name *</label><input id="fullName" name="fullName" required maxlength="160" placeholder="e.g. Mira Sen"></div>
+              <div class="field"><label for="organization">Organization</label><input id="organization" name="organization" maxlength="160" placeholder="Team, company or group"></div>
+              <div class="field"><label for="relationship">How you know them</label><input id="relationship" name="relationship" maxlength="100" placeholder="Friend, doctor, electrician…"></div>
+              <div class="field full">
+                <label>Routes — each keeps its own “last checked” date</label>
+                <div id="route-editor"></div>
+                <button type="button" class="mini-link" id="add-route">+ Add route</button>
+              </div>
+              <div class="field"><label for="preferredChannel">Try first</label><select id="preferredChannel" name="preferredChannel"></select></div>
+              <div class="field"><label for="bestTime">Good time to reach</label><input id="bestTime" name="bestTime" maxlength="160" placeholder="Weekdays after 6 pm"></div>
+              <div class="field"><label for="timeZone">Time zone</label><input id="timeZone" name="timeZone" maxlength="80" placeholder="Asia/Kolkata"></div>
+              <div class="field full"><label for="lastVerified">Last checked</label><input id="lastVerified" name="lastVerified" type="date"></div>
+              <div class="field full"><label for="notes">Notes</label><textarea id="notes" name="notes" maxlength="1000" placeholder="Private note"></textarea></div>
+            </div>
+            <label class="privacy"><input id="shareConsent" name="shareConsent" type="checkbox"><span>Share phone and email in vCard</span></label>
+            <div class="form-actions"><button class="primary" id="save-button" type="submit">Add Contact</button><button class="secondary" id="cancel-edit" type="button" hidden>Cancel</button></div>
+            <p class="form-message" id="form-message" role="status"></p>
+            <p class="form-message" id="route-message" role="status"></p>
+          </form>
+        </div>
+      </aside>
+    </main>
+    <p class="footnote">RelayBook · Local demo</p>
+  </div>
+
+  <script>
+    const list = document.getElementById('contact-list');
+    const form = document.getElementById('contact-form');
+    const message = document.getElementById('form-message');
+    const routeMessage = document.getElementById('route-message');
+    const searchInput = document.getElementById('search');
+    const routeEditor = document.getElementById('route-editor');
+    let contacts = [];
+    let editingId = null;
+
+    const CHANNELS = [['PHONE', 'Phone'], ['EMAIL', 'Email'], ['ALTERNATE_PHONE', 'Backup phone'], ['WHATSAPP', 'WhatsApp'], ['TELEGRAM', 'Telegram']];
+
+    function addRouteRow(route) {
+      const row = document.createElement('div');
+      row.className = 'route-row';
+      const select = document.createElement('select');
+      select.className = 'r-channel';
+      for (const [value, label] of CHANNELS) {
+        const option = document.createElement('option');
+        option.value = value; option.textContent = label;
+        select.appendChild(option);
+      }
+      const value = document.createElement('input');
+      value.className = 'r-value'; value.placeholder = 'Number, address or @handle';
+      const verified = document.createElement('input');
+      verified.className = 'r-verified'; verified.type = 'date'; verified.title = 'When was this route last checked?';
+      const label = document.createElement('input');
+      label.className = 'r-label'; label.placeholder = 'Label (optional)';
+      const remove = document.createElement('button');
+      remove.type = 'button'; remove.className = 'r-remove'; remove.textContent = '×';
+      remove.setAttribute('aria-label', 'Remove route');
+      remove.addEventListener('click', () => { row.remove(); refreshPreferredOptions(); });
+      select.addEventListener('change', refreshPreferredOptions);
+      if (route) {
+        select.value = route.channel;
+        value.value = route.value || '';
+        verified.value = route.lastVerified || '';
+        label.value = route.label || '';
+      }
+      row.append(select, value, verified, label, remove);
+      routeEditor.appendChild(row);
+      refreshPreferredOptions();
+    }
+
+    function collectRoutes() {
+      return [...routeEditor.querySelectorAll('.route-row')].map(row => ({
+        channel: row.querySelector('.r-channel').value,
+        value: row.querySelector('.r-value').value.trim(),
+        verified: row.querySelector('.r-verified').value,
+        label: row.querySelector('.r-label').value.trim()
+      })).filter(route => route.value);
+    }
+
+    function refreshPreferredOptions() {
+      const preferred = form.elements.preferredChannel;
+      const previous = preferred.value;
+      const channels = [...new Set(collectRoutes().map(route => route.channel))];
+      preferred.replaceChildren();
+      for (const channel of channels.length ? channels : ['PHONE']) {
+        const found = CHANNELS.find(entry => entry[0] === channel);
+        const option = document.createElement('option');
+        option.value = channel; option.textContent = found ? found[1] : channel;
+        preferred.appendChild(option);
+      }
+      if ([...preferred.options].some(option => option.value === previous)) preferred.value = previous;
+    }
+
+    document.getElementById('add-route').addEventListener('click', () => addRouteRow(null));
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeLabel = document.getElementById('theme-label');
+
+    function setTheme(theme, remember) {
+      const dark = theme === 'dark';
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      themeToggle.setAttribute('aria-pressed', String(dark));
+      themeToggle.setAttribute('aria-label', dark ? 'Switch to light colors' : 'Switch to dark colors');
+      themeLabel.textContent = dark ? 'Light mode' : 'Dark mode';
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#232a24' : '#f4f1e9');
+      if (remember) {
+        try { localStorage.setItem('relaybook-theme', dark ? 'dark' : 'light'); }
+        catch (error) { /* Storage can be disabled in a sandbox; the toggle still works this visit. */ }
+      }
+    }
+
+    let savedTheme = 'light';
+    try { savedTheme = localStorage.getItem('relaybook-theme') === 'dark' ? 'dark' : 'light'; }
+    catch (error) { /* Use the paper theme when storage is unavailable. */ }
+    setTheme(savedTheme, false);
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      setTheme(nextTheme, true);
+    });
+
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+
+    async function loadContacts() {
+      try {
+        const response = await fetch('/api/contacts');
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Could not load contacts.');
+        contacts = payload;
+        render();
+        updateMetrics();
+        const editId = new URLSearchParams(window.location.search).get('edit');
+        if (editId) {
+          const contactToEdit = contacts.find(contact => contact.id === editId);
+          if (contactToEdit) {
+            editContact(contactToEdit);
+            window.history.replaceState({}, '', '/');
+          }
+        }
+      } catch (error) {
+        list.innerHTML = '<div class="empty">Could not reach the Java service. Start RelayBook and refresh this page.</div>';
+        document.getElementById('shown-count').textContent = 'Offline';
+      }
+    }
+
+    async function updateMetrics() {
+      document.getElementById('total-count').textContent = contacts.length;
+      try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+        if (!response.ok) throw new Error('stats unavailable');
+        document.getElementById('needs-check').textContent = stats.stale;
+        document.getElementById('backup-count').textContent = stats.withBackup;
+        document.getElementById('emergency-count').textContent = stats.emergencyWithoutTwoRoutes;
+      } catch (error) {
+        // Fallback to client-side counts when /api/stats is unreachable.
+        document.getElementById('needs-check').textContent = contacts.filter(c => c.status === 'Needs verification').length;
+        document.getElementById('backup-count').textContent = contacts.filter(c => c.availableRoutes >= 2).length;
+        document.getElementById('emergency-count').textContent = '?';
+      }
+    }
+
+    function statusClass(status) {
+      if (status === 'Ready') return 'ready';
+      if (status === 'Needs verification') return 'warn';
+      return 'neutral';
+    }
+
+    function render() {
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = contacts.filter(c => [c.fullName, c.organization, c.relationship, ...(c.routes || []).map(route => route.value)]
+        .some(value => String(value || '').toLowerCase().includes(query)));
+      document.getElementById('shown-count').textContent = `${filtered.length} ${filtered.length === 1 ? 'record' : 'records'}`;
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty">${contacts.length ? 'No contact matches that search.' : 'Your address book is ready for its first contact. Add one with a preferred route and last-verified date.'}</div>`;
+        return;
+      }
+      list.innerHTML = '';
+      filtered.forEach(contact => {
+        const route = contact.suggestedChannel
+          ? `${contact.suggestedChannel} → ${contact.suggestedValue}` : 'Add a route';
+        const routeLines = (contact.routes || []).map(r => {
+          const checked = r.lastVerified
+            ? `checked ${daysSince(r.lastVerified)} day${daysSince(r.lastVerified) === 1 ? '' : 's'} ago`
+            : 'never checked';
+          return `${escapeHtml(r.channelLabel || r.channel)} · ${escapeHtml(r.value)} — ${checked}`;
+        }).join('\n');
+        const verified = contact.daysSinceVerified < 0 ? 'Verification not recorded' : `Freshest route checked ${contact.daysSinceVerified} days ago`;
+        const whenToReach = [contact.bestTime, contact.timeZone].filter(Boolean).join(' · ');
+        const goodTimeNow = contact.windowKnown
+          ? (contact.goodTimeNow ? 'Good time to reach now' : 'Outside their window') : null;
+        const initials = String(contact.fullName || '').trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
+        const profileHref = '/person/' + encodeURIComponent(contact.id);
+        const card = document.createElement('article');
+        card.className = 'contact-card';
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="identity-group">
+              <span class="avatar">${escapeHtml(initials)}</span>
+              <div class="identity"><div class="name"><a class="person-link" href="${escapeHtml(profileHref)}">${escapeHtml(contact.fullName)}</a></div>
+                <div class="meta">${escapeHtml(contact.typeLabel)}${contact.relationship ? ` · ${escapeHtml(contact.relationship)}` : ''}${contact.organization ? ` · ${escapeHtml(contact.organization)}` : ''}</div>
+              </div>
+            </div>
+            <div class="score" title="Route coverage and how recently details were checked"><b>${contact.score}</b><span> / 100</span></div>
+          </div>
+          <div class="route"><span class="route-label">Try first</span><span class="route-value">${escapeHtml(route)}</span></div>
+          ${routeLines ? `<pre class="route-list">${routeLines}</pre>` : ''}
+          ${whenToReach ? `<div class="time-hint"><b>Good time:</b> ${escapeHtml(whenToReach)}${goodTimeNow ? ` — <b>${escapeHtml(goodTimeNow)}</b>` : ''}</div>` : ''}
+          ${contact.localTime ? `<div class="time-hint"><b>Their local time:</b> ${escapeHtml(contact.localTime)}</div>` : ''}
+          <div class="status-row"><span class="status ${statusClass(contact.status)}">${escapeHtml(contact.status)}</span><span class="verified">· ${escapeHtml(verified)}</span></div>
+          <p class="rationale">${escapeHtml(contact.rationale)}</p>
+          <div class="card-actions">
+            <a class="mini-btn profile" href="${escapeHtml(profileHref)}">View details</a>
+            <button class="mini-btn export" type="button">Contact card</button>
+            <button class="mini-btn edit" type="button">Edit</button>
+            <button class="mini-btn danger delete" type="button">Remove</button>
+          </div>
+          <div class="export-message" role="status" aria-live="polite"></div>
+          <pre class="vcard-preview" hidden></pre>`;
+        card.querySelector('.edit').addEventListener('click', () => editContact(contact));
+        card.querySelector('.delete').addEventListener('click', () => deleteContact(contact));
+        card.querySelector('.export').addEventListener('click', event => exportCard(contact, event.currentTarget, card.querySelector('.export-message'), card.querySelector('.vcard-preview')));
+        list.appendChild(card);
+      });
+    }
+
+    function daysSince(dateText) {
+      const then = new Date(dateText + 'T00:00:00');
+      return Math.max(0, Math.floor((Date.now() - then.getTime()) / 86400000));
+    }
+
+    function editContact(contact) {
+      editingId = contact.id;
+      document.getElementById('form-title').textContent = 'Edit Contact';
+      document.getElementById('save-button').textContent = 'Save changes';
+      document.getElementById('cancel-edit').hidden = false;
+      for (const name of ['type', 'fullName', 'organization', 'relationship', 'bestTime', 'timeZone', 'lastVerified', 'notes']) {
+        form.elements[name].value = contact[name] || '';
+      }
+      routeEditor.replaceChildren();
+      (contact.routes && contact.routes.length ? contact.routes : [{ channel: 'PHONE' }]).forEach(route => addRouteRow(route));
+      form.elements.preferredChannel.value = contact.preferredChannel || 'PHONE';
+      form.elements.shareConsent.checked = Boolean(contact.shareConsent);
+      message.textContent = 'Editing contact.';
+      document.getElementById('editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function resetForm() {
+      form.reset();
+      editingId = null;
+      routeEditor.replaceChildren();
+      addRouteRow({ channel: 'PHONE' });
+      document.getElementById('form-title').textContent = 'Add Contact';
+      document.getElementById('save-button').textContent = 'Add Contact';
+      document.getElementById('cancel-edit').hidden = true;
+      message.textContent = '';
+      routeMessage.textContent = '';
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      message.textContent = '';
+      routeMessage.textContent = '';
+      const routes = collectRoutes();
+      if (!routes.length) {
+        routeMessage.textContent = 'Add at least one phone number, email, or messaging route.';
+        return;
+      }
+      const values = Object.fromEntries(new FormData(form).entries());
+      routes.forEach((route, index) => {
+        values[`route.${index}.channel`] = route.channel;
+        values[`route.${index}.value`] = route.value;
+        if (route.verified) values[`route.${index}.verified`] = route.verified;
+        if (route.label) values[`route.${index}.label`] = route.label;
+      });
+      values.shareConsent = form.elements.shareConsent.checked ? 'true' : 'false';
+      const url = editingId ? `/api/contacts/${encodeURIComponent(editingId)}` : '/api/contacts';
+      try {
+        const response = await fetch(url, {
+          method: editingId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams(values)
+        });
+        const payload = response.status === 204 ? null : await response.json();
+        if (!response.ok) throw new Error(payload?.error || 'Could not save contact.');
+        resetForm();
+        await loadContacts();
+        message.textContent = 'Contact saved.';
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    });
+
+    document.getElementById('cancel-edit').addEventListener('click', resetForm);
+    searchInput.addEventListener('input', render);
+
+    async function deleteContact(contact) {
+      if (!window.confirm(`Delete ${contact.fullName}? This cannot be undone.`)) return;
+      try {
+        const response = await fetch(`/api/contacts/${encodeURIComponent(contact.id)}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const payload = await response.json();
+          throw new Error(payload.error || 'Could not delete contact.');
+        }
+        if (editingId === contact.id) resetForm();
+        await loadContacts();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+    function exportCard(contact, button, status, preview) {
+      const url = `/api/contacts/${encodeURIComponent(contact.id)}/card`;
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${contact.fullName.replace(/[^a-z0-9-_]+/gi, '_')}.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      if (status) status.textContent = 'Preparing vCard…';
+      if (button) button.textContent = 'Exporting…';
+      fetch(url)
+        .then(response => { if (!response.ok) throw new Error('Could not create vCard.'); return response.text(); })
+        .then(text => {
+          preview.textContent = text;
+          preview.hidden = false;
+          if (status) status.textContent = 'vCard ready.';
+          if (button) button.textContent = 'Exported';
+        })
+        .catch(error => {
+          if (status) status.textContent = error.message;
+          if (button) button.textContent = 'Contact card';
+        });
+    }
+
+    loadContacts();
+  </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <title>Contact — RelayBook</title>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-topbar">
+      <a class="site-brand" href="/" aria-label="RelayBook home"><span class="brand-mark">R</span><span>RelayBook<small>DIGITAL ADDRESS BOOK</small></span></a>
+      <nav class="site-nav" aria-label="Main navigation"><a href="/">Contacts</a><a href="/check-ins">Check-ins</a></nav>
+      <div class="site-actions">
+        <span class="local-note">Local demo</span>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark colors"><span class="theme-switch" aria-hidden="true"><span></span></span><span id="theme-label">Dark mode</span></button>
+      </div>
+    </header>
+
+    <section class="page-banner">
+      <img class="header-motion" src="/header-atmosphere.gif" alt="" aria-hidden="true">
+      <div class="banner-wash" aria-hidden="true"></div>
+      <div class="banner-content">
+        <a class="back-link" href="/">← Contacts</a>
+        <div class="page-kicker" id="contact-kind">CONTACT</div>
+        <h1 id="full-name">Loading…</h1>
+        <p id="contact-subtitle"></p>
+      </div>
+    </section>
+
+    <main id="profile-content" hidden>
+      <div class="stat-row">
+        <span>Score <strong id="reach-score">—</strong></span>
+        <span id="reach-status">—</span>
+        <span id="days-since">—</span>
+      </div>
+      <div class="content-grid">
+        <div>
+          <section class="surface">
+            <h2>Suggested route</h2>
+            <div class="route-main">
+              <div class="route-label">TRY FIRST</div>
+              <strong id="suggested-route">—</strong>
+              <p id="route-reason"></p>
+            </div>
+            <dl class="details-list" id="route-details"></dl>
+          </section>
+          <section class="surface">
+            <h2>Contact methods</h2>
+            <dl class="details-list" id="contact-methods"></dl>
+          </section>
+        </div>
+        <div>
+          <section class="surface">
+            <h2>Details</h2>
+            <dl class="details-list" id="personal-details"></dl>
+          </section>
+          <section class="surface">
+            <h2>Notes</h2>
+            <p class="note-content" id="private-note">None.</p>
+          </section>
+          <section class="surface">
+            <h2>vCard sharing</h2>
+            <p id="sharing-note">—</p>
+          </section>
+        </div>
+      </div>
+      <div class="action-row">
+        <a class="action-button primary" id="edit-contact" href="/">Edit</a>
+        <button class="action-button" id="verify-contact" type="button">Mark checked today</button>
+        <button class="action-button" id="export-contact" type="button">Export vCard</button>
+        <button class="action-button danger" id="delete-contact" type="button">Delete</button>
+      </div>
+      <p class="export-message" id="export-status" role="status" aria-live="polite"></p>
+      <pre class="vcard-preview" id="export-preview" hidden></pre>
+    </main>
+
+    <section class="surface" id="profile-error" hidden>
+      <h2>Contact not found</h2>
+      <a class="action-button" href="/">Back to Contacts</a>
+    </section>
+  </div>
+  <script src="/site.js" defer></script>
+  <script>
+    const profileId = decodeURIComponent(window.location.pathname.slice('/person/'.length));
+    const profile = document.getElementById('profile-content');
+    const errorBox = document.getElementById('profile-error');
+
+    function addDetail(list, label, value, kind, caption) {
+      const row = document.createElement('div');
+      row.className = 'detail-row';
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const description = document.createElement('dd');
+      if (value && kind === 'email') {
+        const link = document.createElement('a');
+        link.href = 'mailto:' + value;
+        link.textContent = value;
+        description.appendChild(link);
+      } else if (value && kind === 'phone') {
+        const link = document.createElement('a');
+        link.href = 'tel:' + value.replace(/[^+0-9*#]/g, '');
+        link.textContent = value;
+        description.appendChild(link);
+      } else {
+        description.textContent = value || 'Not recorded';
+      }
+      if (caption) {
+        const note = document.createElement('small');
+        note.className = 'detail-caption';
+        note.textContent = caption;
+        description.appendChild(document.createElement('br'));
+        description.appendChild(note);
+      }
+      row.append(term, description);
+      list.appendChild(row);
+    }
+
+    function daysAgo(dateText) {
+      const then = new Date(dateText + 'T00:00:00');
+      return Math.max(0, Math.floor((Date.now() - then.getTime()) / 86400000));
+    }
+
+    async function loadProfile() {
+      try {
+        const response = await fetch('/api/contacts/' + encodeURIComponent(profileId));
+        const contact = await response.json();
+        if (!response.ok) throw new Error('Contact not found.');
+        document.title = contact.fullName + ' — RelayBook';
+        document.getElementById('contact-kind').textContent = contact.typeLabel;
+        document.getElementById('full-name').textContent = contact.fullName;
+        document.getElementById('contact-subtitle').textContent = [contact.relationship, contact.organization].filter(Boolean).join(' · ');
+        document.getElementById('reach-score').textContent = contact.score + '/100';
+        document.getElementById('reach-status').textContent = contact.status;
+        document.getElementById('days-since').textContent = contact.daysSinceVerified < 0
+          ? 'Last checked: not recorded' : 'Last checked ' + contact.daysSinceVerified + ' days ago';
+        document.getElementById('route-reason').textContent = contact.rationale || '';
+
+        const suggested = document.getElementById('suggested-route');
+        suggested.replaceChildren();
+        if (contact.suggestedChannel && contact.suggestedValue) {
+          const emailRoute = contact.suggestedChannel.toLowerCase().includes('email');
+          const link = document.createElement('a');
+          link.href = emailRoute ? 'mailto:' + contact.suggestedValue : 'tel:' + contact.suggestedValue.replace(/[^+0-9*#]/g, '');
+          link.textContent = contact.suggestedChannel + ' · ' + contact.suggestedValue;
+          suggested.appendChild(link);
+        } else suggested.textContent = 'No route saved';
+
+        const routeDetails = document.getElementById('route-details');
+        const methods = document.getElementById('contact-methods');
+        const personal = document.getElementById('personal-details');
+        routeDetails.replaceChildren();
+        methods.replaceChildren();
+        personal.replaceChildren();
+        addDetail(routeDetails, 'Preferred route', contact.preferredChannel ? contact.preferredChannel.replace('_', ' ').toLowerCase() : null);
+        addDetail(routeDetails, 'Good time', contact.bestTime);
+        addDetail(routeDetails, 'Saved window', contact.reachWindow);
+        addDetail(routeDetails, 'Time zone', contact.timeZone);
+        addDetail(routeDetails, 'Their local time', contact.localTime);
+        addDetail(routeDetails, 'Good time to reach now', contact.windowKnown
+          ? (contact.goodTimeNow ? 'Yes — inside their window' : 'No — outside their window')
+          : null);
+        addDetail(personal, 'Kind', contact.typeLabel);
+        addDetail(personal, 'Relationship', contact.relationship);
+        addDetail(personal, 'Organization', contact.organization);
+        addDetail(personal, 'Last verified', contact.lastVerified);
+        // Per-route freshness: each route shows its own "last checked" date.
+        for (const route of (contact.routes || [])) {
+          const days = route.lastVerified ? daysAgo(route.lastVerified) : null;
+          const caption = route.lastVerified
+            ? `Checked ${days === 0 ? 'today' : days + ' day' + (days === 1 ? '' : 's') + ' ago'}${route.label ? ' · ' + route.label : ''}`
+            : 'Never checked' + (route.label ? ' · ' + route.label : '');
+          addDetail(methods, route.channelLabel || route.channel, route.value,
+            route.channel === 'EMAIL' ? 'email' : 'phone', caption);
+        }
+        document.getElementById('private-note').textContent = contact.notes || 'None.';
+        document.getElementById('sharing-note').textContent = contact.shareConsent ? 'Consent on · routes included' : 'Consent off · routes hidden';
+
+        document.getElementById('edit-contact').href = '/?edit=' + encodeURIComponent(contact.id);
+        document.getElementById('delete-contact').onclick = () => removeContact(contact.id, contact.fullName);
+        document.getElementById('export-contact').onclick = () => exportCard(contact.id, contact.fullName);
+        document.getElementById('verify-contact').onclick = () => markChecked(contact);
+        profile.hidden = false;
+      } catch (error) {
+        errorBox.hidden = false;
+        document.getElementById('full-name').textContent = 'Contact not found';
+      }
+    }
+
+    function localDate() {
+      const date = new Date();
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    async function markChecked(contact) {
+      const button = document.getElementById('verify-contact');
+      button.disabled = true;
+      try {
+        // Quick action endpoint: marks every route checked today without resending the record.
+        const response = await fetch('/api/contacts/' + encodeURIComponent(contact.id) + '/verify', { method: 'POST' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'Could not update contact.');
+        await loadProfile();
+      } catch (error) { alert(error.message); }
+      finally { button.disabled = false; }
+    }
+
+    async function removeContact(id, name) {
+      if (!confirm('Delete ' + name + '?')) return;
+      try {
+        const response = await fetch('/api/contacts/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!response.ok) throw new Error('Could not delete contact.');
+        window.location.href = '/';
+      } catch (error) { alert(error.message); }
+    }
+
+    function exportCard(id, name) {
+      const url = '/api/contacts/' + encodeURIComponent(id) + '/card';
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = name.replace(/[^a-z0-9-_]+/gi, '_') + '.vcf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      const status = document.getElementById('export-status');
+      const preview = document.getElementById('export-preview');
+      const button = document.getElementById('export-contact');
+      status.textContent = 'Preparing vCard…';
+      button.textContent = 'Exporting…';
+      fetch(url)
+        .then(response => { if (!response.ok) throw new Error('Could not create vCard.'); return response.text(); })
+        .then(text => {
+          preview.textContent = text;
+          preview.hidden = false;
+          status.textContent = 'vCard ready.';
+          button.textContent = 'Exported';
+        })
+        .catch(error => {
+          status.textContent = error.message;
+          button.textContent = 'Export vCard';
+        });
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

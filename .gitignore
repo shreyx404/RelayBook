@@ -1,0 +1,33 @@
+# Build output
+target/
+out/
+*.class
+
+# Package files
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Logs
+*.log
+
+# IDE & Tooling
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Backup
+.git.corrupt_backup/

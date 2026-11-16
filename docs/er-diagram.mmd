@@ -1,0 +1,30 @@
+%% RelayBook ER diagram — MySQL storage after normalisation.
+%% Render with any Mermaid tool (GitHub renders it directly).
+
+erDiagram
+    CONTACTS ||--o{ CONTACT_METHODS : "has routes"
+
+    CONTACTS {
+        varchar_36 id PK "UUID"
+        varchar_24 contact_type "PERSON | ORGANIZATION | EMERGENCY"
+        varchar_160 full_name "NOT NULL"
+        varchar_160 organization "NULL"
+        varchar_100 relationship_label "NULL"
+        varchar_30 preferred_channel "channel name"
+        varchar_160 best_time "free text display"
+        varchar_80 time_zone "IANA zone id"
+        text notes "never exported"
+        date last_verified "derived: latest route date"
+        boolean share_consent "vCard route consent"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CONTACT_METHODS {
+        bigint id PK "auto increment"
+        varchar_36 contact_id FK "ON DELETE CASCADE"
+        varchar_30 channel "PHONE | EMAIL | ALTERNATE_PHONE | WHATSAPP | TELEGRAM"
+        varchar_254 value "the number/address"
+        date last_verified "verification date of THIS route"
+        varchar_100 label "optional, e.g. Mobile"
+    }

@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RelayBook — Deep Project Explainer</title>
+<style>
+  /* ── Reset & Base ────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #1a1a2e; background: #fafbff;
+    line-height: 1.72; padding-bottom: 6rem;
+  }
+
+  /* ── Animated Hero ───────────────────────────────────── */
+  .hero {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: #fff; text-align: center; padding: 5rem 2rem 4rem;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 40%, rgba(100,200,255,.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(180,120,255,.12) 0%, transparent 55%);
+    animation: auraPulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes auraPulse {
+    0%   { opacity: .6; transform: scale(1); }
+    100% { opacity: 1;  transform: scale(1.08); }
+  }
+  .hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800; letter-spacing: -.02em; position: relative; }
+  .hero h1 span { background: linear-gradient(90deg,#60efff,#b57efc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero .tagline {
+    font-size: 1.15rem; max-width: 680px; margin: 1.2rem auto 0; opacity: .88; position: relative;
+  }
+  .hero .badge-row { display: flex; gap: .6rem; justify-content: center; margin-top: 1.6rem; flex-wrap: wrap; position: relative; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+    padding: .3rem .85rem; border-radius: 20px; font-size: .82rem; backdrop-filter: blur(6px);
+  }
+  .badge svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* ── TOC ──────────────────────────────────────────────── */
+  .toc {
+    max-width: 880px; margin: -2rem auto 2.5rem; position: relative; z-index: 2;
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 8px 36px rgba(0,0,0,.09); padding: 2rem 2.5rem;
+  }
+  .toc h2 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #666; margin-bottom: 1rem; }
+  .toc ol { columns: 2; column-gap: 2.5rem; list-style-position: inside; }
+  .toc li { break-inside: avoid; margin-bottom: .45rem; }
+  .toc a { color: #4a3fbf; text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section layout ──────────────────────────────────── */
+  section { max-width: 920px; margin: 0 auto 3.5rem; padding: 0 1.5rem; }
+  section > h2 {
+    font-size: 1.55rem; font-weight: 700; margin-bottom: 1.2rem;
+    padding-bottom: .45rem; border-bottom: 3px solid #b57efc;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  section > h2 .emoji { font-size: 1.4rem; }
+  h3 { font-size: 1.15rem; font-weight: 600; color: #302b63; margin: 1.6rem 0 .7rem; }
+  h4 { font-size: 1rem; font-weight: 600; margin: 1rem 0 .5rem; }
+  p, ul, ol { margin-bottom: 1rem; }
+  ul, ol { padding-left: 1.5rem; }
+  li { margin-bottom: .35rem; }
+
+  /* ── Cards ────────────────────────────────────────────── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; margin: 1.2rem 0; }
+  .card {
+    background: #fff; border-radius: 12px; padding: 1.4rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06); border-left: 4px solid #b57efc;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,.1); }
+  .card h4 { margin: 0 0 .5rem; color: #302b63; }
+  .card p { font-size: .92rem; margin: 0; color: #444; }
+  .card .mono { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .82rem; color: #6a5acd; }
+
+  /* ── Accent cards ─────────────────────────────────────── */
+  .card.emergency { border-left-color: #e74c3c; }
+  .card.person     { border-left-color: #3498db; }
+  .card.org        { border-left-color: #27ae60; }
+  .card.strategy   { border-left-color: #f39c12; }
+  .card.observer   { border-left-color: #1abc9c; }
+  .card.template   { border-left-color: #9b59b6; }
+  .card.builder    { border-left-color: #e67e22; }
+  .card.exception  { border-left-color: #c0392b; }
+
+  /* ── Code blocks ──────────────────────────────────────── */
+  pre {
+    background: #1e1e2e; color: #cdd6f4; border-radius: 10px;
+    padding: 1.2rem 1.6rem; overflow-x: auto; font-size: .85rem;
+    line-height: 1.6; margin: 1rem 0; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  code { font-family: inherit; }
+  :not(pre) > code {
+    background: #ede9fe; color: #5b21b6; padding: .15em .4em; border-radius: 4px;
+    font-size: .9em;
+  }
+
+  /* ── Tables ───────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  thead { background: #302b63; color: #fff; }
+  th, td { padding: .6rem .9rem; text-align: left; }
+  th { font-weight: 600; }
+  tbody tr:nth-child(even) { background: #f4f2ff; }
+  tbody tr:hover { background: #ede9fe; }
+  td:first-child { font-weight: 500; }
+
+  /* ── Diagram containers ──────────────────────────────── */
+  .diagram {
+    background: #fff; border-radius: 12px; padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06); margin: 1.5rem 0; overflow-x: auto;
+    text-align: center;
+  }
+  .diagram pre { background: #f8f7ff; color: #302b63; text-align: left; font-size: .82rem; }
+  .diagram-caption { font-size: .85rem; color: #888; margin-top: .5rem; font-style: italic; }
+
+  /* ── Callout boxes ───────────────────────────────────── */
+  .callout {
+    border-radius: 10px; padding: 1rem 1.4rem; margin: 1.2rem 0;
+    display: flex; gap: .8rem; align-items: flex-start;
+  }
+  .callout .icon { font-size: 1.3rem; flex-shrink: 0; }
+  .callout.info  { background: #eef4ff; border-left: 4px solid #3b82f6; }
+  .callout.warn  { background: #fef9ee; border-left: 4px solid #f59e0b; }
+  .callout.tip   { background: #eefbf4; border-left: 4px solid #10b981; }
+  .callout p { margin: 0; font-size: .92rem; }
+
+  /* ── Flow / arch diagrams (ASCII rendered) ───────────── */
+  .arch-box {
+    background: linear-gradient(135deg, #1e1e2e 0%, #24243e 100%);
+    border-radius: 12px; padding: 2rem; margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .arch-box pre { background: transparent; color: #a6e3a1; padding: 0; margin: 0; font-size: .84rem; }
+
+  /* ── Score visual ────────────────────────────────────── */
+  .score-bar-container { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+  .score-example {
+    flex: 1; min-width: 200px;
+    background: #fff; border-radius: 10px; padding: 1rem 1.2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  .score-example .label { font-size: .82rem; color: #888; margin-bottom: .4rem; }
+  .score-bar { height: 10px; border-radius: 5px; background: #e9e5f5; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 5px; transition: width .6s ease; }
+  .score-fill.green  { background: linear-gradient(90deg, #22c55e, #10b981); }
+  .score-fill.yellow { background: linear-gradient(90deg, #eab308, #f59e0b); }
+  .score-fill.red    { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .score-value { font-size: 1.6rem; font-weight: 800; margin-top: .3rem; }
+
+  /* ── Stats / feature pills ───────────────────────────── */
+  .pill-row { display: flex; gap: .6rem; flex-wrap: wrap; margin: 1rem 0; }
+  .pill {
+    padding: .35rem .9rem; border-radius: 20px; font-size: .82rem; font-weight: 600;
+    border: 1.5px solid; display: inline-flex; align-items: center; gap: .3rem;
+  }
+  .pill.purple { color: #7c3aed; border-color: #c4b5fd; background: #f5f3ff; }
+  .pill.blue   { color: #2563eb; border-color: #93c5fd; background: #eff6ff; }
+  .pill.green  { color: #059669; border-color: #6ee7b7; background: #ecfdf5; }
+  .pill.red    { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
+  .pill.orange { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  footer {
+    text-align: center; padding: 2.5rem 1rem; color: #999;
+    font-size: .85rem; border-top: 1px solid #e5e7eb; max-width: 920px; margin: 0 auto;
+  }
+  footer strong { color: #555; }
+
+  /* ── Responsive ──────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .toc ol { columns: 1; }
+    .card-grid { grid-template-columns: 1fr; }
+    section { padding: 0 1rem; }
+    .hero { padding: 3.5rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     HERO
+     ════════════════════════════════════════════════════════ -->
+<header class="hero">
+  <h1><span>RelayBook</span></h1>
+  <p class="tagline">A reachability-first digital address book — not just <em>who</em> is this, but <em>which route should I try next, when was it last checked, and is now a good time?</em></p>
+  <div class="badge-row">
+    <span class="badge">☕ Java 11</span>
+    <span class="badge">🖥️ Swing GUI</span>
+    <span class="badge">🌐 Browser UI</span>
+    <span class="badge">🗄️ MySQL / In-Memory</span>
+    <span class="badge">✅ 91 JUnit Tests</span>
+    <span class="badge">🔒 Privacy-First</span>
+    <span class="badge">v2.0</span>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+     ════════════════════════════════════════════════════════ -->
+<nav class="toc">
+  <h2>📑 Contents</h2>
+  <ol>
+    <li><a href="#problem">The Problem & Solution</a></li>
+    <li><a href="#features">Feature Overview</a></li>
+    <li><a href="#architecture">Architecture & Data Flow</a></li>
+    <li><a href="#oop">OOP Design & Patterns</a></li>
+    <li><a href="#model">The Domain Model</a></li>
+    <li><a href="#algorithm">The Reachability Algorithm</a></li>
+    <li><a href="#database">Database & Persistence</a></li>
+    <li><a href="#documents">Documents, Import & Export</a></li>
+    <li><a href="#security">Security & Privacy</a></li>
+    <li><a href="#testing">Testing & Quality</a></li>
+    <li><a href="#api">REST API Reference</a></li>
+    <li><a href="#running">Running the Project</a></li>
+    <li><a href="#file-map">Source File Map</a></li>
+    <li><a href="#syllabus">OOP Syllabus Mapping</a></li>
+  </ol>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════
+     1. THE PROBLEM
+     ════════════════════════════════════════════════════════ -->
+<section id="problem">
+  <h2><span class="emoji">🎯</span> 1. The Problem & Solution</h2>
+
+  <h3>The Gap in Conventional Address Books</h3>
+  <p>Ordinary address books store names and numbers, but they fail in two concrete, everyday ways:</p>
+
+  <div class="card-grid">
+    <div class="card emergency">
+      <h4>🔴 Problem 1: Shared Staleness</h4>
+      <p>A phone number and an email go stale at different speeds, but conventional records carry <strong>one shared "last verified" date</strong> — so users stop trusting the whole record when one field ages.</p>
+    </div>
+    <div class="card emergency">
+      <h4>🔴 Problem 2: Emergency Neglect</h4>
+      <p>The contact you need <strong>when things go wrong</strong> — a doctor, a hospital, an emergency relative — is held to the same standard as everyone else, and often has <strong>no fallback route</strong> at all.</p>
+    </div>
+  </div>
+
+  <h3>RelayBook's Answer</h3>
+  <p>RelayBook adds a small, explainable <strong>"reachability layer"</strong> on top of an address book:</p>
+  <ul>
+    <li>Every route (phone, email, WhatsApp, Telegram, backup phone) is a <strong>first-class record</strong> with its <em>own</em> verification date.</li>
+    <li>A transparent <strong>rule-based advisor</strong> recommends which route to try next, quoting per-route ages: <em>"Email was verified 20 days ago, phone 300 days ago: try email first."</em></li>
+    <li>Emergency contacts are held to <strong>stricter standards</strong> — 90-day recheck windows, 2 routes minimum, harsher scoring.</li>
+    <li>A structured <strong>"Is now a good time?"</strong> feature shows the contact's local time and whether their availability window is open.</li>
+  </ul>
+
+  <div class="callout info">
+    <span class="icon">💡</span>
+    <p><strong>What RelayBook deliberately does NOT claim:</strong> The 0–100 score is a heuristic for route coverage and record freshness. It is not a probability that someone will answer. RelayBook does not send messages, verify ownership, or guarantee delivery.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     2. FEATURES
+     ════════════════════════════════════════════════════════ -->
+<section id="features">
+  <h2><span class="emoji">⚡</span> 2. Feature Overview</h2>
+
+  <div class="card-grid">
+    <div class="card person">
+      <h4>📇 Contact Management</h4>
+      <p>Add, list, edit, search, sort, and delete <strong>Person</strong>, <strong>Organization</strong>, and <strong>Emergency</strong> contacts. Full CRUD in both Swing and Browser UIs.</p>
+    </div>
+    <div class="card">
+      <h4>📡 Per-Route Verification</h4>
+      <p>Save any number of routes (5 channels) with <strong>individual verification dates</strong> and labels. Each route ages independently.</p>
+    </div>
+    <div class="card strategy">
+      <h4>🧭 Smart Route Advice</h4>
+      <p>Get a suggested fallback route with a <strong>reason that quotes each route's own age</strong>. The advisor picks the freshest usable route automatically.</p>
+    </div>
+    <div class="card observer">
+      <h4>⏰ "Is Now a Good Time?"</h4>
+      <p>See the contact's <strong>local time</strong> and whether their saved availability window is open right now. Supports weekdays, day lists, overnight windows.</p>
+    </div>
+    <div class="card">
+      <h4>✅ Quick Check-In</h4>
+      <p><strong>One-click "Mark checked today"</strong> — record-wide or per-route. No need to re-submit the whole form. Works in Swing and web.</p>
+    </div>
+    <div class="card org">
+      <h4>📊 Directory Dashboard</h4>
+      <p>Live stats: total contacts, stale count, single-route warnings, ready count, emergency contacts missing a second route.</p>
+    </div>
+    <div class="card template">
+      <h4>📤 Export & Import</h4>
+      <p>Privacy-aware <strong>vCard</strong>, <strong>CSV</strong>, <strong>JSON backup</strong>, and <strong>reachability summary</strong>. Import vCards with duplicate detection.</p>
+    </div>
+    <div class="card builder">
+      <h4>🔄 Live UI Sync</h4>
+      <p>Create a contact in the browser → Swing table updates <strong>automatically</strong>. Observer pattern keeps both UIs in sync.</p>
+    </div>
+    <div class="card">
+      <h4>💾 Dual Storage</h4>
+      <p><strong>In-memory</strong> demo mode (zero setup) or <strong>MySQL</strong> persistence (transactional, normalized schema). No silent fallback.</p>
+    </div>
+    <div class="card exception">
+      <h4>🏦 Bank Account Exercise</h4>
+      <p>Separate syllabus exercise: deposit, withdraw, fee, name change via <code>Scanner</code>. Run with <code>--bank-demo</code>. Frozen, never mixed with the contact domain.</p>
+    </div>
+  </div>
+
+  <div class="pill-row">
+    <span class="pill purple">47 Java Classes</span>
+    <span class="pill blue">91 Unit Tests</span>
+    <span class="pill green">8 Packages</span>
+    <span class="pill orange">5 Channels</span>
+    <span class="pill red">4 Design Patterns</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     3. ARCHITECTURE
+     ════════════════════════════════════════════════════════ -->
+<section id="architecture">
+  <h2><span class="emoji">🏗️</span> 3. Architecture & Data Flow</h2>
+
+  <p>RelayBook follows a clean layered architecture. Both UIs share a single <code>ContactService</code>, so creating a contact in one is visible in the other without a manual refresh.</p>
+
+  <div class="arch-box">
+<pre>
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              RelayBook v2.0                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐     ┌──────────────────────────────────────┐              │
+│  │  Swing GUI   │     │      Browser UI (HTML/CSS/JS)        │              │
+│  │ AddressBook- │     │  index.html · check-ins.html         │              │
+│  │   Frame      │     │  person.html · new-contact.html      │              │
+│  └──────┬───────┘     └──────────────┬───────────────────────┘              │
+│         │                             │                                      │
+│         │  Observer (onCreated,       │  REST API (GET/POST/PUT/DELETE)      │
+│         │   onUpdated, onDeleted)     │  Same-origin guard (403)            │
+│         │                             │                                      │
+│  ┌──────┴─────────────────────────────┴──────────────────────┐              │
+│  │                    ContactService                          │              │
+│  │  • CRUD with validation    • Stream search/sort pipeline   │              │
+│  │  • Observer notifications  • Duplicate detection           │              │
+│  │  • Mark-verified actions   • Directory stats               │              │
+│  └──────┬────────────────────────────────────────┬───────────┘              │
+│         │                                         │                          │
+│  ┌──────┴──────────────┐    ┌─────────────────────┴──────────┐              │
+│  │ ReachabilityAdvisor │    │   Document Subsystem            │              │
+│  │  (Strategy context) │    │   (Template Method)             │              │
+│  │                     │    │                                 │              │
+│  │  ┌───────────────┐  │    │  ┌─────────────────────────┐   │              │
+│  │  │DefaultRouting-│  │    │  │ ContactCardDocument      │   │              │
+│  │  │    Policy     │  │    │  │ CsvDirectoryDocument     │   │              │
+│  │  ├───────────────┤  │    │  │ JsonBackupDocument       │   │              │
+│  │  │StrictRouting- │  │    │  │ ReachabilityReportDoc    │   │              │
+│  │  │    Policy     │  │    │  │ VCardImporter            │   │              │
+│  │  └───────────────┘  │    │  └─────────────────────────┘   │              │
+│  └─────────────────────┘    └────────────────────────────────┘              │
+│                                                                              │
+│  ┌───────────────────────────────────────────────────────────┐              │
+│  │               ContactRepository (interface)                │              │
+│  │                                                            │              │
+│  │   ┌─────────────────────┐   ┌─────────────────────────┐   │              │
+│  │   │ InMemoryContact-    │   │ MySqlContactRepository  │   │              │
+│  │   │    Repository       │   │  • Prepared statements   │   │              │
+│  │   │  (demo, volatile)   │   │  • Transactions          │   │              │
+│  │   │                     │   │  • Auto-migration v1→v2  │   │              │
+│  │   └─────────────────────┘   └─────────────────────────┘   │              │
+│  └───────────────────────────────────────────────────────────┘              │
+│                                                                              │
+│  ┌────────────────────────────┐  ┌───────────────────────────┐              │
+│  │    ReminderScheduler       │  │   Exception Hierarchy     │              │
+│  │  daemon ScheduledExecutor  │  │  RelayBookException       │              │
+│  │  periodic stale sweep      │  │  ├─ ValidationException   │              │
+│  │  clean start/stop          │  │  ├─ NotFoundExc.          │              │
+│  └────────────────────────────┘  │  ├─ DuplicateExc.         │              │
+│                                   │  └─ DataAccessExc.        │              │
+│                                   └───────────────────────────┘              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</pre>
+  </div>
+
+  <div class="callout tip">
+    <span class="icon">🔑</span>
+    <p><strong>Key insight:</strong> The Swing and browser clients use the <em>same</em> <code>ContactService</code> instance. MySQL is selected when <code>DB_URL</code> is set; otherwise the app uses a thread-safe in-memory store with synthetic demo data.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     4. OOP DESIGN & PATTERNS
+     ════════════════════════════════════════════════════════ -->
+<section id="oop">
+  <h2><span class="emoji">🎨</span> 4. OOP Design & Patterns</h2>
+
+  <p>RelayBook implements <strong>four Gang-of-Four design patterns</strong> — each chosen because the domain genuinely needs it, not as a checkbox exercise.</p>
+
+  <!-- ──── Strategy ──── -->
+  <h3>🔶 Strategy Pattern — Routing Policies</h3>
+  <p>Different contact types need different scoring strictness. Rather than if/else chains, the <code>ReachabilityAdvisor</code> delegates to a <code>RoutingPolicy</code> selected by type.</p>
+
+  <div class="card-grid">
+    <div class="card strategy">
+      <h4>DefaultRoutingPolicy</h4>
+      <p>Used for Person and Organization contacts. Standard freshness bands: ≤90d = 40pts, ≤180d = 30pts, ≤365d = 15pts.</p>
+      <p class="mono">1 route = 25 · 2 routes = 45 · 3+ = 60</p>
+    </div>
+    <div class="card emergency">
+      <h4>StrictRoutingPolicy</h4>
+      <p>Used for Emergency contacts. Harsher freshness: ≤180d = <strong>15pts</strong> (vs 30), ≤365d = <strong>5pts</strong> (vs 15). Below-minimum coverage = <strong>10pts</strong> (vs 25).</p>
+      <p class="mono">Below minimum = 10 · Same band edges</p>
+    </div>
+  </div>
+
+<pre><code><span style="color:#89b4fa">// RoutingPolicy.java — Strategy interface with named constants</span>
+public interface RoutingPolicy {
+    int COVERAGE_SINGLE_ROUTE = 25;
+    int COVERAGE_TWO_ROUTES   = 45;
+    int COVERAGE_THREE_PLUS   = 60;
+    int STRICT_COVERAGE_SINGLE = 10;  <span style="color:#6c7086">// emergency below-minimum penalty</span>
+
+    int FRESH_WITHIN_90_DAYS  = 40;
+    int FRESH_WITHIN_180_DAYS = 30;
+    int FRESH_WITHIN_365_DAYS = 15;
+
+    ReachabilityReport evaluate(Contact contact, LocalDate today);
+}
+
+<span style="color:#89b4fa">// AbstractRoutingPolicy.java — shared skeleton, two hooks</span>
+public abstract class AbstractRoutingPolicy implements RoutingPolicy {
+    public ReachabilityReport evaluate(Contact contact, LocalDate today) {
+        <span style="color:#6c7086">// skeleton: pick routes, choose freshest fallback, explain...</span>
+        int score = Math.min(MAX_SCORE,
+            coveragePoints(contact, routeCount) + freshnessPoints(days));
+        <span style="color:#6c7086">// ...build full report with rationale, local time, window check</span>
+    }
+    protected abstract int coveragePoints(Contact contact, int routeCount);
+    protected abstract int freshnessPoints(long daysSinceVerified);
+}
+</code></pre>
+
+  <!-- ──── Observer ──── -->
+  <h3>🟢 Observer Pattern — Live UI Sync</h3>
+  <p><code>ContactService</code> is the <strong>subject</strong>: it keeps a <code>CopyOnWriteArrayList&lt;ContactChangeListener&gt;</code> and notifies after every successful create/update/delete. The Swing frame is one observer; the reminder scheduler is another.</p>
+
+<pre><code><span style="color:#89b4fa">// ContactChangeListener.java — Observer interface with default methods</span>
+public interface ContactChangeListener {
+    default void onCreated(Contact contact)  { }
+    default void onUpdated(Contact contact)  { }
+    default void onDeleted(Contact contact)  { }
+    default void onReminderSweep(List&lt;Contact&gt; stale) { }
+}
+
+<span style="color:#89b4fa">// AddressBookFrame registers itself:</span>
+service.addListener(new ContactChangeListener() {
+    public void onCreated(Contact c) {
+        SwingUtilities.invokeLater(() -> refreshTable());  <span style="color:#6c7086">// EDT discipline</span>
+    }
+    <span style="color:#6c7086">// ...same for onUpdated, onDeleted</span>
+});
+</code></pre>
+
+  <div class="callout tip">
+    <span class="icon">🔄</span>
+    <p><strong>Demo moment:</strong> Create a contact in the browser → the Swing table moves by itself. The service is the subject; both UIs are just observers.</p>
+  </div>
+
+  <!-- ──── Template Method ──── -->
+  <h3>🟣 Template Method — Document Export</h3>
+  <p><code>Document.export()</code> is <code>final</code>: it calls <code>appendHeader()</code> → <code>renderContent()</code> → <code>appendFooter()</code>. Each document subclass (vCard, CSV, JSON, Reachability) fills the blanks.</p>
+
+<pre><code>public abstract class Document implements Exportable {
+    <span style="color:#f38ba8">public final</span> String export() {   <span style="color:#6c7086">// ← cannot be overridden</span>
+        StringBuilder doc = new StringBuilder();
+        appendHeader(doc);            <span style="color:#6c7086">// hook 1</span>
+        doc.append(renderContent());  <span style="color:#6c7086">// abstract — subclass fills this</span>
+        appendFooter(doc);            <span style="color:#6c7086">// hook 2</span>
+        return doc.toString();
+    }
+    public abstract String renderContent();
+}
+</code></pre>
+
+  <!-- ──── Builder ──── -->
+  <h3>🟠 Builder Pattern — Contact Construction</h3>
+  <p>The old 13-argument constructor chain is gone. <code>Contact.Builder</code> is fluent, validates in <code>build()</code>, and supports <code>toBuilder()</code> for immutable updates. Invalid contacts can never exist.</p>
+
+<pre><code>Contact emergency = Contact.builder(ContactType.EMERGENCY)
+    .fullName("Dr. Mehta")
+    .route(Channel.PHONE, "+91 98765 43210", LocalDate.now(), "Clinic")
+    .route(Channel.EMAIL, "dr.mehta@hospital.in", LocalDate.now())
+    .bestTime("Weekdays 10:00-17:00")
+    .timeZone("Asia/Kolkata")
+    .shareConsent(true)
+    .build();   <span style="color:#6c7086">// ← validates: 2 routes ✓, name ✓, channels ✓</span>
+
+<span style="color:#6c7086">// Immutable update: copy → change → rebuild</span>
+Contact verified = emergency.toBuilder()
+    .verifyAllRoutes(LocalDate.now())
+    .build();
+</code></pre>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     5. DOMAIN MODEL
+     ════════════════════════════════════════════════════════ -->
+<section id="model">
+  <h2><span class="emoji">🧱</span> 5. The Domain Model</h2>
+
+  <h3>Inheritance Hierarchy</h3>
+  <div class="diagram">
+<pre>
+                         Contact  (abstract, Comparable&lt;Contact&gt;)
+                        ╱                          ╲
+              PersonContact                 OrganizationContact
+              (180 days, 1 route)            (365 days, 1 route)
+                    │
+            EmergencyContact
+            (90 days, 2 routes)
+            stricter scoring
+
+ ────────────────────────────────────────────────────────────
+
+           Document  (abstract, Template Method — export() is final)
+          ╱         ╲           ╲               ╲
+   ContactCard   CsvDirectory  JsonBackup   ReachabilityReport
+   Document      Document      Document     Document
+
+ ────────────────────────────────────────────────────────────
+
+     RelayBookException  (abstract, unchecked)
+    ╱          ╲           ╲               ╲
+Validation  ContactNot   Duplicate     DataAccess
+Exception   Found Exc.   Contact Exc.  Exception
+  (→400)      (→404)       (→409)        (→500)
+</pre>
+    <p class="diagram-caption">Multilevel inheritance: EmergencyContact → PersonContact → Contact. Each subtype overrides getStaleAfterDays(), getMinimumRoutes(), describe().</p>
+  </div>
+
+  <h3>Contact Subtypes at a Glance</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Subtype</th><th>Stale After</th><th>Min Routes</th><th>Policy</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>PersonContact</td><td>180 days</td><td>1</td><td>Default</td><td>Friend, family member</td></tr>
+        <tr><td>OrganizationContact</td><td>365 days</td><td>1</td><td>Default</td><td>Office, company, club</td></tr>
+        <tr><td>EmergencyContact</td><td>90 days</td><td>2</td><td><strong>Strict</strong></td><td>Doctor, hospital, ICE</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Key Value Objects</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>ContactMethod</h4>
+      <p><strong>Immutable value object.</strong> Holds a channel (PHONE, EMAIL, ALTERNATE_PHONE, WHATSAPP, TELEGRAM), a value, per-route last-verified date, and optional label.</p>
+      <p class="mono">withLastVerified(date) → new copy</p>
+    </div>
+    <div class="card">
+      <h4>TimeWindow</h4>
+      <p><strong>Immutable value object.</strong> Parses "Weekdays 18:00-21:00", "Mon,Wed 10:00-12:00", "22:00-02:00" (overnight), "any time". <code>isOpenAt(ZonedDateTime)</code> checks the contact's own time zone.</p>
+      <p class="mono">tryParse() → Optional · parse() → throws</p>
+    </div>
+    <div class="card">
+      <h4>Channel (enum)</h4>
+      <p>PHONE, EMAIL, ALTERNATE_PHONE, WHATSAPP, TELEGRAM. Each has <code>getLabel()</code> and <code>isDialable()</code>. Adding a new channel = one enum constant.</p>
+    </div>
+    <div class="card">
+      <h4>Result&lt;T&gt;</h4>
+      <p>Generic either/or type: <code>success(T)</code> or <code>failure(String)</code>. Used by the vCard importer so one broken card doesn't crash the whole file.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     6. THE ALGORITHM
+     ════════════════════════════════════════════════════════ -->
+<section id="algorithm">
+  <h2><span class="emoji">🧮</span> 6. The Reachability Algorithm</h2>
+
+  <p>The score is <strong>coverage + freshness</strong>, capped at 100. All point values are named constants in <code>RoutingPolicy</code> — no magic numbers anywhere in the logic.</p>
+
+  <h3>Coverage Points</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Available Routes</th><th>Default Policy</th><th>Strict Policy (Emergency)</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>1 (below minimum for emergency)</td><td>25</td><td><strong>10</strong></td></tr>
+        <tr><td>2</td><td>45</td><td>45</td></tr>
+        <tr><td>3+</td><td>60</td><td>60</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Freshness Points</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Age of Latest Check-In</th><th>Default Policy</th><th>Strict Policy</th></tr></thead>
+      <tbody>
+        <tr><td>No date recorded</td><td>0</td><td>0</td></tr>
+        <tr><td>0 – 90 days</td><td>40</td><td>40</td></tr>
+        <tr><td>91 – 180 days</td><td>30</td><td><strong>15</strong></td></tr>
+        <tr><td>181 – 365 days</td><td>15</td><td><strong>5</strong></td></tr>
+        <tr><td>> 365 days</td><td>0</td><td>0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Example Scores</h3>
+  <div class="score-bar-container">
+    <div class="score-example">
+      <div class="label">Person · 2 routes · verified 15 days ago</div>
+      <div class="score-bar"><div class="score-fill green" style="width:85%"></div></div>
+      <div class="score-value" style="color:#22c55e">85</div>
+      <div style="font-size:.82rem;color:#666">Coverage 45 + Freshness 40 = 85</div>
+    </div>
+    <div class="score-example">
+      <div class="label">Emergency · 1 route · verified 200 days ago</div>
+      <div class="score-bar"><div class="score-fill red" style="width:15%"></div></div>
+      <div class="score-value" style="color:#dc2626">15</div>
+      <div style="font-size:.82rem;color:#666">Coverage 10 (below min) + Freshness 5 = 15</div>
+    </div>
+    <div class="score-example">
+      <div class="label">Organization · 3 routes · verified 100 days ago</div>
+      <div class="score-bar"><div class="score-fill yellow" style="width:90%"></div></div>
+      <div class="score-value" style="color:#f59e0b">90</div>
+      <div style="font-size:.82rem;color:#666">Coverage 60 + Freshness 30 = 90</div>
+    </div>
+  </div>
+
+  <h3>Route Selection Logic</h3>
+  <ol>
+    <li><strong>Check the preferred route</strong> — if it's fresh (within the subtype's stale window), recommend it.</li>
+    <li><strong>If stale, scan alternatives</strong> — pick the route with the most recent verification date of its own.</li>
+    <li><strong>Build a rationale</strong> that names every route's age: <em>"Phone was verified 300 days ago, email was verified 20 days ago: try email first."</em></li>
+    <li><strong>Missing dates are never invented</strong> — if there's no date, the advice says "has never been verified."</li>
+  </ol>
+
+  <h3>Staleness vs Score</h3>
+  <p>They are <strong>separate concepts</strong>. Staleness comes from the contact subtype itself (person 180 days, org 365, emergency 90). A record is "stale" when its preferred route has no date or is past the window. The score is a combined coverage + freshness indicator — a contact can have a decent score but still be flagged "Needs verification."</p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     7. DATABASE
+     ════════════════════════════════════════════════════════ -->
+<section id="database">
+  <h2><span class="emoji">🗄️</span> 7. Database & Persistence</h2>
+
+  <h3>Entity-Relationship</h3>
+  <div class="diagram">
+<pre>
+  ┌─────────────────────────────────────┐
+  │            contacts                  │
+  ├─────────────────────────────────────┤
+  │ PK  id              VARCHAR(36)      │
+  │     contact_type    VARCHAR(24)      │
+  │     full_name       VARCHAR(160)     │
+  │     organization    VARCHAR(160)     │
+  │     relationship    VARCHAR(100)     │
+  │     preferred_channel VARCHAR(30)    │
+  │     best_time       VARCHAR(160)     │
+  │     time_zone       VARCHAR(80)      │
+  │     notes           TEXT             │
+  │     last_verified   DATE  (derived)  │
+  │     share_consent   BOOLEAN          │
+  │     created_at      TIMESTAMP        │
+  │     updated_at      TIMESTAMP        │
+  └────────────┬────────────────────────┘
+               │ 1
+               │
+               │ N
+  ┌────────────┴────────────────────────┐
+  │         contact_methods              │
+  ├─────────────────────────────────────┤
+  │ PK  id              BIGINT AUTO_INC  │
+  │ FK  contact_id      VARCHAR(36)      │─── ON DELETE CASCADE
+  │     channel         VARCHAR(30)      │
+  │     value           VARCHAR(254)     │
+  │     last_verified   DATE             │    ← per-route date!
+  │     label           VARCHAR(100)     │
+  │  UNIQUE (contact_id, channel)        │
+  └─────────────────────────────────────┘
+</pre>
+    <p class="diagram-caption">Normalized v2 schema: each route is a separate row with its own verification date. Routes are unique per (contact, channel).</p>
+  </div>
+
+  <h3>Key Database Properties</h3>
+  <ul>
+    <li><strong>Transactional writes:</strong> A contact and its routes are always written in <strong>one transaction</strong>. Either everything commits or nothing does.</li>
+    <li><strong>Cascade deletes:</strong> Deleting a contact removes its routes through <code>ON DELETE CASCADE</code>.</li>
+    <li><strong>Prepared statements only:</strong> Every SQL parameter is bound, never concatenated.</li>
+    <li><strong>Auto-migration:</strong> On first start against a v1 database (with flat <code>phone</code>/<code>email</code>/<code>alternate_phone</code> columns), the repository copies them into <code>contact_methods</code> inside a transaction, then drops the legacy columns.</li>
+    <li><strong>No silent fallback:</strong> If <code>DB_URL</code> is set and MySQL fails, the app crashes with an actionable error — it never silently switches to in-memory.</li>
+  </ul>
+
+  <h3>Schema SQL</h3>
+<pre><code>CREATE TABLE IF NOT EXISTS contacts (
+    id                  VARCHAR(36)  NOT NULL PRIMARY KEY,
+    contact_type        VARCHAR(24)  NOT NULL,
+    full_name           VARCHAR(160) NOT NULL,
+    organization        VARCHAR(160) NULL,
+    preferred_channel   VARCHAR(30)  NULL,
+    best_time           VARCHAR(160) NULL,
+    time_zone           VARCHAR(80)  NULL,
+    notes               TEXT         NULL,
+    last_verified       DATE         NULL,
+    share_consent       BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS contact_methods (
+    id            BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    contact_id    VARCHAR(36)  NOT NULL,
+    channel       VARCHAR(30)  NOT NULL,
+    `value`       VARCHAR(254) NOT NULL,
+    last_verified DATE         NULL,
+    label         VARCHAR(100) NULL,
+    UNIQUE KEY uq_contact_channel (contact_id, channel),
+    CONSTRAINT fk_methods_contact FOREIGN KEY (contact_id)
+        REFERENCES contacts (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</code></pre>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     8. DOCUMENTS
+     ════════════════════════════════════════════════════════ -->
+<section id="documents">
+  <h2><span class="emoji">📄</span> 8. Documents, Import & Export</h2>
+
+  <p>All documents share the same <code>Document.export()</code> skeleton (Template Method). Each subclass fills in the format-specific content.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Document</th><th>Format</th><th>Privacy</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>ContactCardDocument</strong></td>
+          <td>vCard 3.0</td>
+          <td>Consent-gated routes; notes/best-time/timezone NEVER exported</td>
+          <td>RFC-compliant: <code>N:</code> always present, 75-octet line folding, CRLF, proper escaping. WHATSAPP/TELEGRAM as explicit non-standard properties.</td>
+        </tr>
+        <tr>
+          <td><strong>CsvDirectoryDocument</strong></td>
+          <td>CSV</td>
+          <td>Privacy-aware by default; full mode explicit</td>
+          <td>Default: no notes, only consented routes. Full backup mode includes everything and labels itself.</td>
+        </tr>
+        <tr>
+          <td><strong>JsonBackupDocument</strong></td>
+          <td>JSON</td>
+          <td>Full (deliberate — labels itself)</td>
+          <td>Complete backup with all fields including notes, routes, and per-route dates.</td>
+        </tr>
+        <tr>
+          <td><strong>ReachabilityReportDocument</strong></td>
+          <td>TXT / HTML</td>
+          <td>Scores and route status only</td>
+          <td>Summary of all contacts' reachability status, scores, and freshness indicators.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>vCard Import</h3>
+  <p>The <code>VCardImporter</code> processes cards one by one, producing a <code>Result&lt;Contact&gt;</code> for each. One broken card costs one rejected line, not the whole file. Duplicates (same name + shared route value) are skipped and reported.</p>
+
+  <div class="callout warn">
+    <span class="icon">⚠️</span>
+    <p><strong>Privacy rule (load-bearing):</strong> Notes, relationship context, best time, and time zone <strong>never leave the app</strong> in any export. Route data needs <code>shareConsent</code>. Full backups must label themselves.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     9. SECURITY
+     ════════════════════════════════════════════════════════ -->
+<section id="security">
+  <h2><span class="emoji">🔒</span> 9. Security & Privacy</h2>
+
+  <h3>Same-Origin Guard</h3>
+  <p>State-changing requests (POST, PUT, DELETE) are rejected with <strong>HTTP 403</strong> when the <code>Origin</code> or <code>Host</code> header does not match the server's own host:port. This blocks two attack vectors:</p>
+
+  <div class="card-grid">
+    <div class="card exception">
+      <h4>🛡️ CSRF Protection</h4>
+      <p>A malicious page on <code>evil.example</code> cannot POST to your local RelayBook — the <code>Origin</code> header would be <code>http://evil.example</code>, not <code>http://127.0.0.1:8080</code>.</p>
+    </div>
+    <div class="card exception">
+      <h4>🛡️ DNS Rebinding Protection</h4>
+      <p>If an attacker rebinds their domain to <code>127.0.0.1</code>, the <code>Host</code> header would still say <code>evil.example:8080</code>, not the server's own host.</p>
+    </div>
+  </div>
+
+  <h3>Other Security Measures</h3>
+  <ul>
+    <li><strong>Loopback binding by default:</strong> Binds to <code>127.0.0.1</code>. Non-loopback <code>HOST</code> prints a clear warning.</li>
+    <li><strong>Prepared statements only:</strong> No SQL injection surface.</li>
+    <li><strong>Validation at construction:</strong> Invalid contacts cannot exist — the builder rejects them at <code>build()</code>.</li>
+    <li><strong>Honest limitations:</strong> No HTTPS, no authentication, no encryption-at-rest, no audit log. The app says exactly what it doesn't do.</li>
+  </ul>
+
+<pre><code><span style="color:#6c7086">// curl tests documented in README:</span>
+
+<span style="color:#a6e3a1">## Allowed (curl sends no Origin; Host matches):</span>
+curl -s -X POST http://127.0.0.1:8080/api/contacts \
+  -d 'type=PERSON&fullName=Test&phone=%2B91+10000+00000'
+
+<span style="color:#f38ba8">## Rejected (cross-origin → 403):</span>
+curl -i -X POST http://127.0.0.1:8080/api/contacts \
+  -H 'Origin: http://evil.example' -d 'type=PERSON&fullName=X&phone=1'
+
+<span style="color:#f38ba8">## Rejected (rebound hostname → 403):</span>
+curl -i -X DELETE http://127.0.0.1:8080/api/contacts/any-id \
+  -H 'Host: evil.example:8080'
+</code></pre>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     10. TESTING
+     ════════════════════════════════════════════════════════ -->
+<section id="testing">
+  <h2><span class="emoji">🧪</span> 10. Testing & Quality</h2>
+
+  <div class="pill-row">
+    <span class="pill green">91 JUnit 5 Tests</span>
+    <span class="pill blue">Zero Failures</span>
+    <span class="pill purple">No DB/Server Needed</span>
+    <span class="pill orange">Boundary Tests at Day Edges</span>
+  </div>
+
+  <h3>Test Coverage by Package</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Test Class</th><th>What It Tests</th><th>Key Assertions</th></tr></thead>
+      <tbody>
+        <tr><td>ContactBuilderAndFactoryTest</td><td>Builder validation, factory, route parsing</td><td>Invalid contacts throw; routes normalized; legacy getters work</td></tr>
+        <tr><td>ContactSubtypeBehaviourTest</td><td>Polymorphic overrides, comparators</td><td>Each subtype returns correct staleAfterDays, minimumRoutes, describe()</td></tr>
+        <tr><td>ContactValidatorTest</td><td>Validation rules</td><td>Emergency < 2 routes rejected; bad timezone rejected; notes length</td></tr>
+        <tr><td>TimeWindowTest</td><td>Parsing, isOpenAt, overnight windows</td><td>"Weekdays 18:00-21:00", "22:00-02:00", "any time", day lists</td></tr>
+        <tr><td>RoutingPolicyBoundaryTest</td><td>Score boundaries</td><td>Day edges at 90/91, 180/181, 365/366 for every subtype × both policies</td></tr>
+        <tr><td>ReachabilityAdvisorTest</td><td>Per-route fallback, rationale text</td><td>Stale preferred → picks freshest alternative; rationale quotes ages</td></tr>
+        <tr><td>ContactServiceTest</td><td>CRUD, search, duplicates, observers</td><td>Duplicate detection; listener notifications; markVerified variants</td></tr>
+        <tr><td>InMemoryContactRepositoryTest</td><td>Repository CRUD</td><td>Insert/findAll/findById/update/delete</td></tr>
+        <tr><td>ContactCardDocumentTest</td><td>vCard RFC compliance</td><td>N: present; 75-octet folding; CRLF; escaping; consent gate; privacy</td></tr>
+        <tr><td>DirectoryDocumentsTest</td><td>CSV, JSON, Reachability</td><td>Privacy CSV omits notes; full backup includes everything</td></tr>
+        <tr><td>VCardImporterTest</td><td>Import: fresh/duplicate/malformed</td><td>One bad card = one rejection; duplicates skipped; round-trip</td></tr>
+        <tr><td>WebServerGuardTest</td><td>Same-origin guard core</td><td>Cross-origin → reject; same-origin → allow; no-origin → allow</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout info">
+    <span class="icon">📊</span>
+    <p><strong>Boundary test philosophy:</strong> The band edges (90, 180, 365 days) are the <em>contract</em>. The tests pin them for both policies and all three subtypes, checking the exact day the score changes. If someone moves a constant, the test breaks the same day.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     11. API REFERENCE
+     ════════════════════════════════════════════════════════ -->
+<section id="api">
+  <h2><span class="emoji">🌐</span> 11. REST API Reference</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET</code></td><td>/api/contacts</td><td>List all contacts. Filters: <code>?q=</code> (search), <code>?type=</code> (PERSON/ORGANIZATION/EMERGENCY), <code>?stale=true</code>, <code>?sort=</code> (name/score/last_verified/type)</td></tr>
+        <tr><td><code>GET</code></td><td>/api/contacts/{id}</td><td>Read one contact</td></tr>
+        <tr><td><code>POST</code></td><td>/api/contacts</td><td>Create (form-encoded; per-route: <code>route.N.channel/value/verified/label</code>)</td></tr>
+        <tr><td><code>PUT</code></td><td>/api/contacts/{id}</td><td>Update</td></tr>
+        <tr><td><code>DELETE</code></td><td>/api/contacts/{id}</td><td>Delete</td></tr>
+        <tr><td><code>POST</code></td><td>/api/contacts/{id}/verify</td><td>Mark checked today (all routes, or <code>?channel=EMAIL</code> for one)</td></tr>
+        <tr><td><code>GET</code></td><td>/api/contacts/{id}/card</td><td>Consent-aware vCard download</td></tr>
+        <tr><td><code>GET</code></td><td>/api/stats</td><td>Directory counters (total, stale, single-route, ready, emergency-gap)</td></tr>
+        <tr><td><code>POST</code></td><td>/api/import/vcard</td><td>Import vCard text → per-card summary JSON</td></tr>
+        <tr><td><code>GET</code></td><td>/api/export/csv</td><td>Privacy CSV; add <code>?full=true</code> for full backup</td></tr>
+        <tr><td><code>GET</code></td><td>/api/export/json</td><td>Full JSON backup</td></tr>
+        <tr><td><code>GET</code></td><td>/api/export/reachability</td><td>Reachability summary; add <code>?format=html</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Error Mapping</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Exception</th><th>HTTP Status</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>ValidationException</code></td><td>400 Bad Request</td><td>Invalid input, missing fields, bad timezone, emergency with < 2 routes</td></tr>
+        <tr><td><code>ContactNotFoundException</code></td><td>404 Not Found</td><td>Unknown contact ID</td></tr>
+        <tr><td><code>DuplicateContactException</code></td><td>409 Conflict</td><td>Same name + shared route value</td></tr>
+        <tr><td><code>RelayBookException</code> (other)</td><td>500 Internal</td><td>Database errors, unexpected failures</td></tr>
+        <tr><td>Origin/Host mismatch</td><td>403 Forbidden</td><td>Cross-origin or DNS-rebound state-changing request</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     12. RUNNING
+     ════════════════════════════════════════════════════════ -->
+<section id="running">
+  <h2><span class="emoji">🚀</span> 12. Running the Project</h2>
+
+  <h3>Requirements</h3>
+  <ul>
+    <li>JDK 11 or newer</li>
+    <li>Maven 3.8+ recommended (or compile with plain <code>javac</code>)</li>
+    <li>MySQL 8+ only if you want persistent storage</li>
+  </ul>
+
+  <h3>Quick Demo (No Database)</h3>
+<pre><code><span style="color:#a6e3a1"># Opens Swing window + browser page at http://127.0.0.1:8080</span>
+mvn exec:java
+
+<span style="color:#a6e3a1"># Browser-only (headless machines)</span>
+mvn exec:java -Dexec.args="--web-only"
+
+<span style="color:#a6e3a1"># Bank account syllabus exercise</span>
+mvn exec:java -Dexec.args="--bank-demo"
+</code></pre>
+
+  <h3>MySQL Mode</h3>
+<pre><code><span style="color:#a6e3a1"># 1. Create schema (or let the app create tables)</span>
+mysql -u root -p < database/schema.sql
+
+<span style="color:#a6e3a1"># 2. Set connection variables</span>
+export DB_URL='jdbc:mysql://127.0.0.1:3306/relaybook?serverTimezone=UTC&useSSL=false'
+export DB_USER='root'
+export DB_PASSWORD='your-password'
+
+<span style="color:#a6e3a1"># 3. Run</span>
+mvn exec:java
+</code></pre>
+
+  <h3>Compile Without Maven</h3>
+<pre><code>mkdir -p out
+find src/main/java -name '*.java' -print0 | \
+  xargs -0 javac --release 11 --add-modules jdk.httpserver -encoding UTF-8 -d out
+cp -R src/main/resources/* out/
+java --add-modules jdk.httpserver -cp out com.relaybook.App
+</code></pre>
+
+  <h3>Tests & Smoke Checks</h3>
+<pre><code>mvn test                  <span style="color:#6c7086"># 91 JUnit 5 tests; no MySQL required</span>
+./scripts/smoke-test.sh   <span style="color:#6c7086"># plain javac --release 11 + dependency-free checks</span>
+</code></pre>
+
+  <h3>Environment Variables</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>DB_URL</code></td><td>(none → in-memory)</td><td>MySQL JDBC connection URL</td></tr>
+        <tr><td><code>DB_USER</code></td><td>root</td><td>MySQL username</td></tr>
+        <tr><td><code>DB_PASSWORD</code></td><td>(empty)</td><td>MySQL password</td></tr>
+        <tr><td><code>HOST</code></td><td>127.0.0.1</td><td>Bind address (warns if not loopback)</td></tr>
+        <tr><td><code>PORT</code></td><td>8080</td><td>HTTP server port</td></tr>
+        <tr><td><code>REMINDER_MINUTES</code></td><td>60</td><td>Background stale sweep interval</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     13. SOURCE FILE MAP
+     ════════════════════════════════════════════════════════ -->
+<section id="file-map">
+  <h2><span class="emoji">📁</span> 13. Source File Map</h2>
+
+  <h3>Package Overview (47 Java classes)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Package</th><th>Classes</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>com.relaybook</code></td><td>App</td><td>Entry point: CLI parsing, storage mode selection, Swing/web bootstrap</td></tr>
+        <tr>
+          <td><code>model</code></td>
+          <td>Contact, PersonContact, OrganizationContact, EmergencyContact, Contact.Builder, ContactMethod, ContactFactory, ContactValidator, ContactType, Channel, TimeWindow</td>
+          <td>Domain: inheritance hierarchy, value objects, builder, validation, enums</td>
+        </tr>
+        <tr>
+          <td><code>service</code></td>
+          <td>ContactService, ReachabilityAdvisor, ReachabilityReport, RoutingPolicy, AbstractRoutingPolicy, DefaultRoutingPolicy, StrictRoutingPolicy, ContactChangeListener, ReminderScheduler, DirectoryStats, SortOption, Result&lt;T&gt;</td>
+          <td>Business logic: Strategy context, Observer subject, scheduling, search/sort</td>
+        </tr>
+        <tr>
+          <td><code>repository</code></td>
+          <td>ContactRepository, InMemoryContactRepository, MySqlContactRepository, DataAccessException</td>
+          <td>Persistence: interface + two implementations (memory / MySQL)</td>
+        </tr>
+        <tr>
+          <td><code>document</code></td>
+          <td>Document, Exportable, Validatable, PrivacyLabelled, ShareableDocument, ContactCardDocument, CsvDirectoryDocument, JsonBackupDocument, ReachabilityReportDocument, VCardImporter, ImportSummary</td>
+          <td>Documents: Template Method base, privacy-gated exports, vCard import</td>
+        </tr>
+        <tr>
+          <td><code>exception</code></td>
+          <td>RelayBookException, ValidationException, ContactNotFoundException, DuplicateContactException</td>
+          <td>Custom exception hierarchy → HTTP status mapping</td>
+        </tr>
+        <tr>
+          <td><code>ui</code></td>
+          <td>AddressBookFrame</td>
+          <td>Swing GUI: route editor, stats strip, import/export, SwingWorker I/O</td>
+        </tr>
+        <tr>
+          <td><code>web</code></td>
+          <td>WebServer, Json</td>
+          <td>HTTP server: REST API, HTML pages, same-origin guard, JSON serialization</td>
+        </tr>
+        <tr>
+          <td><code>syllabus</code></td>
+          <td>BankAccount, BankAccountDemo</td>
+          <td>Frozen course exercise: deposit/withdraw/fee via Scanner</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Resource Files</h3>
+  <ul>
+    <li><code>src/main/resources/web/</code> — HTML pages (index, check-ins, person detail, new contact), CSS, JavaScript. All vanilla, no CDN, works offline.</li>
+    <li><code>database/schema.sql</code> — MySQL 8 schema definition</li>
+    <li><code>docs/*.mmd</code> — Mermaid diagram sources (class, sequence, ER)</li>
+    <li><code>scripts/smoke-test.sh</code> — <code>javac --release 11</code> + dependency-free runtime checks</li>
+  </ul>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     14. SYLLABUS MAPPING
+     ════════════════════════════════════════════════════════ -->
+<section id="syllabus">
+  <h2><span class="emoji">🎓</span> 14. OOP Syllabus Mapping</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Syllabus Item</th><th>Where in RelayBook</th><th>Viva Talking Point</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Class, Object, Constructor, <code>this</code></td>
+          <td><code>Contact(Builder)</code> uses <code>this.field = ...</code>; ContactMethod, TimeWindow</td>
+          <td>"The builder is the single construction path — one place where all fields are normalized."</td>
+        </tr>
+        <tr>
+          <td>Inheritance, <code>super</code></td>
+          <td>PersonContact/OrganizationContact extend Contact; EmergencyContact extends PersonContact (multilevel); <code>super(builder)</code> chains</td>
+          <td>"Adding a fourth contact type needs one new class and zero if/else changes."</td>
+        </tr>
+        <tr>
+          <td><code>static</code>, <code>final</code></td>
+          <td><code>Contact.getCreatedObjectCount()</code> (static counter), <code>getId()</code> is final, <code>Document.export()</code> is final, policy constants are <code>static final</code></td>
+          <td>"IDs cannot change, export skeletons cannot be overridden, and every policy reads from one constant pool."</td>
+        </tr>
+        <tr>
+          <td>Polymorphism</td>
+          <td><code>getStaleAfterDays()</code>, <code>getMinimumRoutes()</code>, <code>describe()</code>, <code>getContactType()</code> — dispatched through <code>Contact</code> references everywhere</td>
+          <td>"The advisor never asks 'what type is this?' — it calls the method and the subtype answers."</td>
+        </tr>
+        <tr>
+          <td>Abstract class</td>
+          <td><code>Contact</code>, <code>Document</code>, <code>AbstractRoutingPolicy</code></td>
+          <td>"You can't instantiate a generic contact or a generic document — but you can process any concrete one through the base type."</td>
+        </tr>
+        <tr>
+          <td>Interface, multiple interfaces</td>
+          <td><code>Exportable</code>, <code>Validatable</code>, <code>PrivacyLabelled</code>, <code>ShareableDocument</code>, <code>ContactRepository</code>, <code>RoutingPolicy</code>, <code>ContactChangeListener</code></td>
+          <td>"ContactCardDocument extends Document AND implements ShareableDocument AND PrivacyLabelled — three contracts in one class."</td>
+        </tr>
+        <tr>
+          <td>Builder Pattern</td>
+          <td><code>Contact.Builder</code> — fluent, validates in <code>build()</code>, <code>toBuilder()</code> for copies</td>
+          <td>"Invalid contacts cannot exist: construction and validation are one atomic step."</td>
+        </tr>
+        <tr>
+          <td>Strategy Pattern</td>
+          <td><code>DefaultRoutingPolicy</code> / <code>StrictRoutingPolicy</code>; <code>ReachabilityAdvisor</code> as context</td>
+          <td>"Emergency records get strict scoring without the advisor knowing a single point value."</td>
+        </tr>
+        <tr>
+          <td>Observer Pattern</td>
+          <td><code>ContactService</code> → <code>ContactChangeListener</code>; Swing frame + reminder scheduler as observers</td>
+          <td>"Create a contact in the browser and the Swing table moves by itself."</td>
+        </tr>
+        <tr>
+          <td>Template Method</td>
+          <td><code>Document.export()</code> is final: header → renderContent → footer</td>
+          <td>"Every document is assembled the same way; a subclass can only fill the blanks."</td>
+        </tr>
+        <tr>
+          <td>Custom Exceptions</td>
+          <td><code>RelayBookException</code> → Validation/NotFound/Duplicate/DataAccess; web maps to 400/404/409/500</td>
+          <td>"One ordered catch chain maps a whole family of domain failures to HTTP."</td>
+        </tr>
+        <tr>
+          <td>Generics</td>
+          <td><code>Result&lt;T&gt;</code> (success or error); typed collections everywhere</td>
+          <td>"The type system forces callers to check before calling getValue()."</td>
+        </tr>
+        <tr>
+          <td>Collections, Comparable, Comparator</td>
+          <td><code>Contact implements Comparable&lt;Contact&gt;</code>; comparator constants <code>BY_NAME</code>, <code>BY_LAST_VERIFIED</code>, <code>BY_TYPE</code>; <code>SortOption</code> enum</td>
+          <td>"Natural order is name; comparators cover score, date, and type."</td>
+        </tr>
+        <tr>
+          <td>Streams</td>
+          <td><code>ContactService.search()</code> — stream pipeline shared by Swing and API</td>
+          <td>"The browser filter and the API filter can never drift apart — same pipeline."</td>
+        </tr>
+        <tr>
+          <td>Concurrency</td>
+          <td><code>CopyOnWriteArrayList</code> listeners; daemon <code>ScheduledExecutorService</code>; <code>SwingWorker</code>; thread-safe in-memory store</td>
+          <td>"JDBC waits in a worker thread; the event dispatch thread only paints."</td>
+        </tr>
+        <tr>
+          <td>JDBC CRUD</td>
+          <td><code>MySqlContactRepository</code>: prepared statements, transactions, migration</td>
+          <td>"A contact and its routes commit together or not at all."</td>
+        </tr>
+        <tr>
+          <td>Swing GUI + Events</td>
+          <td><code>AddressBookFrame</code>: menus, listeners, route editor, stats strip, SwingWorkers</td>
+          <td>"Every repository call runs off the EDT; results post back with invokeLater."</td>
+        </tr>
+        <tr>
+          <td>Scanner / BankAccount</td>
+          <td><code>BankAccount</code> + <code>BankAccountDemo</code>; run with <code>--bank-demo</code></td>
+          <td>"Kept separate because financial behaviour has no role in an address book."</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════════════════ -->
+<footer>
+  <p><strong>RelayBook v2.0</strong> — A reachability-first digital address book</p>
+  <p>Java 11 · Swing · JDBC/MySQL · Built-in HTTP Server · HTML/CSS/JS · 91 Tests · 4 Design Patterns</p>
+  <p style="margin-top:.6rem">OOP in Java — Course Project</p>
+</footer>
+
+</body>
+</html>

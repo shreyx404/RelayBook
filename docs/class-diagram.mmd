@@ -1,0 +1,252 @@
+%% RelayBook class diagram — model, service, repository, document, exception layers.
+%% Render with any Mermaid tool (GitHub renders it directly):
+%%   https://mermaid.live  or  `mmdc -i docs/class-diagram.mmd -o docs/class-diagram.svg`
+
+classDiagram
+    direction TB
+
+    class Contact {
+        <<abstract>>
+        -String id
+        -String fullName
+        -Map~Channel, ContactMethod~ routes
+        -Channel preferredChannel
+        -String bestTime
+        -TimeWindow timeWindow
+        -String timeZone
+        -String notes
+        -boolean shareConsent
+        +getStaleAfterDays() int
+        +getMinimumRoutes() int
+        +describe() String
+        +getContactType()* ContactType
+        +getLastVerified() LocalDate
+        +getRoutes() List~ContactMethod~
+        +toBuilder() Builder
+        +compareTo(Contact) int
+    }
+
+    class PersonContact {
+        +STALE_AFTER_DAYS = 180
+    }
+    class OrganizationContact {
+        +STALE_AFTER_DAYS = 365
+    }
+    class EmergencyContact {
+        +STALE_AFTER_DAYS = 90
+        +MINIMUM_ROUTES = 2
+    }
+
+    class ContactMethod {
+        <<immutable value object>>
+        +Channel channel
+        +String value
+        +LocalDate lastVerified
+        +String label
+        +withLastVerified(LocalDate) ContactMethod
+    }
+
+    class Channel {
+        <<enumeration>>
+        PHONE
+        EMAIL
+        ALTERNATE_PHONE
+        WHATSAPP
+        TELEGRAM
+    }
+
+    class ContactType {
+        <<enumeration>>
+        PERSON
+        ORGANIZATION
+        EMERGENCY
+    }
+
+    class TimeWindow {
+        <<immutable value object>>
+        +tryParse(String) Optional~TimeWindow~
+        +parse(String) TimeWindow
+        +isOpenAt(ZonedDateTime) boolean
+    }
+
+    class Contact_Builder {
+        Builder
+        +type(ContactType) Builder
+        +route(ContactMethod) Builder
+        +verifyAllRoutes(LocalDate) Builder
+        +build() Contact
+    }
+
+    class ContactFactory {
+        +fromForm(String id, Map form) Contact
+    }
+
+    class ContactValidator {
+        +validate(Contact) void
+    }
+
+    class RoutingPolicy {
+        <<interface / Strategy>>
+        +COVERAGE_SINGLE_ROUTE = 25
+        +FRESH_WITHIN_90_DAYS = 40
+        +evaluate(Contact, LocalDate) ReachabilityReport
+    }
+    class AbstractRoutingPolicy {
+        <<shared algorithm>>
+        #coveragePoints(Contact, int)* int
+        #freshnessPoints(long)* int
+    }
+    class DefaultRoutingPolicy
+    class StrictRoutingPolicy
+
+    class ReachabilityAdvisor {
+        <<Strategy context>>
+        -Map~ContactType, RoutingPolicy~ policies
+        +analyze(Contact, LocalDate) ReachabilityReport
+    }
+
+    class ReachabilityReport {
+        <<immutable>>
+        +int score
+        +String status
+        +String rationale
+        +List~RouteFreshness~ routeFreshness
+        +String localTimeText
+        +boolean goodTimeToReachNow
+    }
+
+    class ContactService {
+        -CopyOnWriteArrayList listeners
+        +addListener(ContactChangeListener) void
+        +create(Contact) Contact
+        +markVerified(String id) Contact
+        +search(String, ContactType, boolean) List~Contact~
+        +stats() DirectoryStats
+    }
+    class ContactChangeListener {
+        <<interface / Observer>>
+        +onCreated(Contact) void
+        +onUpdated(Contact) void
+        +onDeleted(Contact) void
+        +onReminderSweep(List~Contact~) void
+    }
+    class ReminderScheduler {
+        -ScheduledExecutorService executor
+        +start() void
+        +stop() void
+    }
+    class DirectoryStats
+    class SortOption {
+        <<enumeration>>
+        NAME
+        SCORE
+        LAST_VERIFIED
+        TYPE
+    }
+    class Result~T~ {
+        +success(T) Result~T~
+        +failure(String) Result~T~
+        +isSuccess() boolean
+    }
+
+    class ContactRepository {
+        <<interface>>
+        +findAll() List~Contact~
+        +findById(String) Optional~Contact~
+        +insert(Contact) void
+        +update(Contact) void
+        +delete(String) boolean
+    }
+    class InMemoryContactRepository
+    class MySqlContactRepository {
+        -ensureSchemaExists() void
+        -migrateLegacyRouteColumns(Connection) void
+    }
+
+    class Document {
+        <<abstract / Template Method>>
+        +export()* final String
+        #appendHeader(StringBuilder) void
+        #renderContent()* String
+        #appendFooter(StringBuilder) void
+    }
+    class Exportable {
+        <<interface>>
+        +export() String
+    }
+    class Validatable {
+        <<interface>>
+        +isValid() boolean
+    }
+    class ShareableDocument {
+        <<interface>>
+        +isShareAllowed() boolean
+    }
+    class PrivacyLabelled {
+        <<interface>>
+        +getPrivacyLabel() String
+    }
+    class ContactCardDocument
+    class CsvDirectoryDocument
+    class JsonBackupDocument
+    class ReachabilityReportDocument
+    class VCardImporter {
+        +importFromText(String) ImportSummary
+    }
+    class ImportSummary
+
+    class RelayBookException {
+        <<abstract>>
+    }
+    class ValidationException
+    class ContactNotFoundException
+    class DuplicateContactException
+    class DataAccessException
+
+    Contact <|-- PersonContact
+    Contact <|-- OrganizationContact
+    PersonContact <|-- EmergencyContact
+    Contact *-- ContactMethod : owns
+    Contact ..> TimeWindow : parses bestTime
+    Contact --> Channel
+    Contact --> ContactType
+    Contact ..> Contact_Builder : creates
+    ContactFactory ..> Contact_Builder : uses
+    ContactValidator ..> Contact : validates
+    Contact_Builder ..> ContactValidator : build() validates
+
+    RoutingPolicy <|.. AbstractRoutingPolicy
+    AbstractRoutingPolicy <|-- DefaultRoutingPolicy
+    AbstractRoutingPolicy <|-- StrictRoutingPolicy
+    ReachabilityAdvisor o-- RoutingPolicy : one per type
+    ReachabilityAdvisor ..> ReachabilityReport : produces
+
+    ContactService --> ContactRepository
+    ContactService --> ReachabilityAdvisor
+    ContactService o-- ContactChangeListener : notifies
+    ReminderScheduler ..> ContactChangeListener : onReminderSweep
+    ContactService ..> Result : importer outcomes
+    ContactService ..> DirectoryStats : stats()
+    ContactService ..> SortOption : sorting
+
+    ContactRepository <|.. InMemoryContactRepository
+    ContactRepository <|.. MySqlContactRepository
+
+    Exportable <|.. Document
+    Document <|-- ContactCardDocument
+    Document <|-- CsvDirectoryDocument
+    Document <|-- JsonBackupDocument
+    Document <|-- ReachabilityReportDocument
+    ShareableDocument ..> Exportable
+    ShareableDocument ..> Validatable
+    ContactCardDocument ..|> ShareableDocument
+    ContactCardDocument ..|> PrivacyLabelled
+    CsvDirectoryDocument ..|> Validatable
+    CsvDirectoryDocument ..|> PrivacyLabelled
+    VCardImporter ..> ContactService : creates via
+    VCardImporter ..> ImportSummary : returns
+
+    RelayBookException <|-- ValidationException
+    RelayBookException <|-- ContactNotFoundException
+    RelayBookException <|-- DuplicateContactException
+    RelayBookException <|-- DataAccessException

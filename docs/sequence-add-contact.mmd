@@ -1,0 +1,38 @@
+%% RelayBook sequence diagram:
+%% "add contact -> validate -> repository -> notify listeners -> advisor"
+%% Render with any Mermaid tool (GitHub renders it directly).
+
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Swing form<br/>(AddressBookFrame)
+    participant Web as Browser form<br/>(index.html)
+    participant S as ContactService
+    participant V as ContactValidator<br/>(via Builder.build())
+    participant R as ContactRepository<br/>(memory / MySQL)
+    participant L as ContactChangeListener<br/>(Swing table)
+    participant A as ReachabilityAdvisor<br/>(RoutingPolicy)
+
+    User->>UI: fill form incl. routes + dates
+    User->>Web: fill route editor rows
+    Web->>S: POST /api/contacts (form fields)
+    UI->>S: create(contact)
+    S->>V: Builder.build() -> validate(contact)
+    alt invalid (e.g. emergency with one route)
+        V--xS: ValidationException
+        S--xWeb: 400 + type-specific message
+        S--xUI: error dialog
+    else valid
+        V-->>S: contact accepted
+        S->>R: insert(contact)
+        R-->>S: stored (MySQL: contact + contact_methods in one transaction)
+        S-->>L: onCreated(contact)  (Observer)
+        L->>L: SwingUtilities.invokeLater(refreshTable)
+        Note over UI: table updates without clicking Refresh
+        S-->>Web: 201 + ReachabilityReport
+        S->>A: analyze(contact, today)
+        A->>A: pick RoutingPolicy by contact type (emergency = strict)
+        A->>A: compare per-route verification dates
+        A-->>S: report (score, status, suggested route, rationale)
+        S-->>Web: rationale e.g. "Email was verified 20 days ago, phone 300 days ago: try email first"
+    end
