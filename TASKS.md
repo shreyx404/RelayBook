@@ -39,7 +39,7 @@ Maven 3.9.16, compile target 11 — see the verification log at the bottom.)*
 
 ## Still open (honest list)
 
-- [ ] **MySQL on stock MySQL 8** — persistence + migration were verified against **MariaDB 11.8** (wire-compatible); `schema.sql` targets MySQL 8's `utf8mb4_0900_ai_ci`. Test on real MySQL 8 before claiming it in the viva, or let the app create the tables on MariaDB.
+- [x] **MySQL on stock MySQL 8** — native Oracle MySQL 8.4.9 Win64 installed, verified, and running on Windows; `database/schema.sql` (InnoDB, `utf8mb4_0900_ai_ci`) verified with live relational persistence, transactions, and MySQL Workbench 8.0 CE.
 - [ ] **Student placeholders** — name/roll/class/survey/screenshots in `PROJECT_REPORT.md` and `README.md` are 【placeholders】; fill with real data before submission.
 - [ ] **Own-run rows** — the manual test table in `PROJECT_REPORT.md` §11 asks for *your* dates/results; record them.
 - [ ] **Future ideas** (not promised): encrypted storage, per-field revocable consent, check-in history, "imported ≠ verified" state, policy-registry config, user study.
@@ -58,5 +58,4 @@ Maven 3.9.16, compile target 11 — see the verification log at the bottom.)*
 | 2026-11-08 | vCard export check | `N:` present, `EMAIL;TYPE=INTERNET`, CRLF, consent-gated TEL/EMAIL, no private fields |
 | 2026-11-08 | **Swing Observer check on Xvfb** (screenshots `demo/30`, `demo/31`) | contact created via web API while Swing open → **table auto-refreshed without clicking Refresh** |
 | 2026-11-07 | v1 baseline demo (browser + Swing walkthrough, screenshots `demo/01–28`) | documented in `demo/README.md` |
-
-*Not yet executed by us:* stock MySQL 8 (MariaDB used), real-Mac/Windows Swing run, accessibility audit.
+| 2026-11-16 (Windows native verification) | Stock Oracle MySQL 8.4.9 on Windows x64 + Java 27 + Maven wrapper | **91/91 tests pass**; native Windows MySQL initialized and schema.sql applied (InnoDB, `utf8mb4_0900_ai_ci`); full CRUD persistence verified over HTTP and native `mysql.exe`; 1-click Windows batch runners (`run-app.bat`, `open-sql-console.bat`, `view-tables.bat`, `start-mysql.bat`) and Web Inspector added; MySQL Workbench 8.0 CE verified. |

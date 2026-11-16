@@ -31,3 +31,6 @@ Desktop.ini
 
 # Backup
 .git.corrupt_backup/
+
+# Database data files
+database/data/

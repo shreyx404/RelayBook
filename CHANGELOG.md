@@ -135,3 +135,12 @@ at the bottom ("Verified by running").
 | Added the system/governance docs: product requirements, task board with verification log, and contributor/agent rules | `PRD.md`, `TASKS.md`, `AGENTS.md` | PRD states the *what/why* (personas, stories, FR/NFR, acceptance gates); TASKS is the executed A–N board with an honest "still open" list; AGENTS pins constraints (Java 11, no runtime deps, frozen syllabus exercise, privacy rules, verification duties) |
 | Full re-verification of v2.0 on a clean machine (JDK 17.0.21, Maven 3.9.16, target 11) | — | `mvn compile` clean, **91/91 tests pass**, smoke test pass; live HTTP checks reproduced emergency-2-route 400, duplicate 409, cross-origin 403, `/api/stats`, stale filter, vCard `N:`/INTERNET/CRLF/consent rules |
 | Swing Observer verified **visually** this time (virtual X display): a contact created through the web API appeared in the Swing table without clicking Refresh | `demo/30-v2-swing-before.png`, `demo/31-v2-swing-auto-refresh.png` | closes the caveat from the 2026-11-06 run above; v1-baseline UI walkthrough screenshots (demo/01–28) are also archived in the demo folder |
+
+## Windows native verification and tooling (2026-11-16)
+
+| Change | Where | Note |
+|---|---|---|
+| Installed and verified native Oracle MySQL 8.4 Server Win64 and MySQL Workbench 8.0 CE | Windows environment | Verified native MySQL 8.4 InnoDB persistence and foreign key CASCADE constraints against `database/schema.sql` (`utf8mb4_0900_ai_ci`). |
+| Added 1-click Windows execution and SQL administration batch utilities | `run-app.bat`, `open-sql-console.bat`, `view-tables.bat`, `database/start-mysql.bat` | Simplifies launching RelayBook with MySQL mode and accessing native MySQL CLI without manual setup. |
+| Added real-time Web Database Inspector | `sql_viewer.py` | Browser-based live MySQL inspector polling native MySQL engine every 2 seconds with query runner. |
+| Re-verified complete test suite | — | **91/91 JUnit tests pass**; end-to-end API writes verified reflected live in MySQL InnoDB tables. |
